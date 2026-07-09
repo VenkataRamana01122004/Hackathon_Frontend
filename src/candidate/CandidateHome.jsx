@@ -5,8 +5,8 @@ function CandidateHome() {
   return (
     <div>CandidateHome
       <br/>
-      <Link to="interviewpanel">MCQ</Link>
-      <Link to="interviewpanel">Compiler</Link>
+      <Link to="assignment">Assignment</Link>&nbsp;&nbsp;&nbsp;&nbsp;
+      <Link to="assignment">Compiler</Link>&nbsp;&nbsp;&nbsp;&nbsp;
       <Link to="interviewpanel">Interview</Link>
     </div>
   )
