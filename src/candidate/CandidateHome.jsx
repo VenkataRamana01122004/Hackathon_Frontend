@@ -5,7 +5,7 @@ function CandidateHome() {
   return (
     <div>CandidateHome
       <br/>
-      <Link to="assignment">Assignment</Link>&nbsp;&nbsp;&nbsp;&nbsp;
+      <Link to="bitsassessment">Assignment</Link>&nbsp;&nbsp;&nbsp;&nbsp;
       <Link to="assignment">Compiler</Link>&nbsp;&nbsp;&nbsp;&nbsp;
       <Link to="interviewpanel">Interview</Link>
     </div>

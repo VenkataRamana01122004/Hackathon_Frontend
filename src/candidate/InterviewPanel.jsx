@@ -195,6 +195,36 @@ function InterviewPanel() {
 		};
 	}, [started]);
 	
+	useEffect(() => {
+    if (!started) return;
+
+    const handleFullscreenChange = () => {
+        if (!document.fullscreenElement && !submittedRef.current) {
+            alert("Fullscreen exited. Interview will be submitted.");
+
+            finishInterview([
+                ...allAnswers,
+                {
+                    questionNo: currentQuestion + 1,
+                    question: questions[currentQuestion],
+                    answer: transcript.trim(),
+                },
+            ]);
+        }
+    };
+
+    document.addEventListener(
+        "fullscreenchange",
+        handleFullscreenChange
+    );
+
+    return () =>
+        document.removeEventListener(
+            "fullscreenchange",
+            handleFullscreenChange
+        );
+}, [started, currentQuestion, transcript, allAnswers]);
+
 	const startInterview = async () => {
 		interviewStartRef.current = new Date().toISOString();
 		try {
