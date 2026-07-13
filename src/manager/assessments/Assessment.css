@@ -1,0 +1,36 @@
+.assessment-page{
+
+    padding:30px;
+    min-height:100vh;
+    background:#EFEFD0;
+
+}
+
+.assessment-header{
+
+    margin-bottom:25px;
+
+}
+
+.assessment-header h1{
+
+    color:#3A5A40;
+
+}
+
+.view-btn{
+
+    background:#588157;
+    color:white;
+    border:none;
+    padding:8px 15px;
+    border-radius:6px;
+    cursor:pointer;
+
+}
+
+.view-btn:hover{
+
+    background:#3A5A40;
+
+}

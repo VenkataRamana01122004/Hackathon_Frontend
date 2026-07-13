@@ -4,13 +4,17 @@ import {
   FaUserTie,
   FaUserCheck,
   FaClipboardCheck,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaCode,
+  FaQuestionCircle,
+  FaFileAlt
 } from "react-icons/fa";
 
 import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
 
 function Sidebar({ isOpen }) {
+
   const menuItems = [
     {
       title: "Dashboard",
@@ -37,6 +41,28 @@ function Sidebar({ isOpen }) {
       path: "/manager/employees",
       icon: <FaUsers />,
     },
+
+    // NEW
+    {
+      title: "Coding Questions",
+      path: "/manager/coding",
+      icon: <FaCode />,
+    },
+
+    // NEW
+    {
+      title: "MCQ Questions",
+      path: "/manager/mcq",
+      icon: <FaQuestionCircle />,
+    },
+
+    // NEW
+    {
+      title: "Assessment Reports",
+      path: "/manager/assessments",
+      icon: <FaFileAlt />,
+    },
+
     {
       title: "Employee Reviews",
       path: "/manager/reviews",
@@ -60,7 +86,9 @@ function Sidebar({ isOpen }) {
                 isActive ? "menu-link active" : "menu-link"
               }
             >
-              <span className="menu-icon">{item.icon}</span>
+              <span className="menu-icon">
+                {item.icon}
+              </span>
 
               {isOpen && (
                 <span className="menu-title">

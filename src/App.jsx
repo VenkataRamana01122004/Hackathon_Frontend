@@ -20,6 +20,11 @@ import Employees from "./manager/employees/Employees";
 import ScheduleInterview from "./manager/interview/ScheduleInterview";
 import EmployeeReviews from "./manager/reviews/EmployeeReviews";
 
+// New Manager Modules
+import CodingQuestions from "./manager/coding/CodingQuestions";
+import MCQQuestions from "./manager/mcq/MCQQuestions";
+import Assessments from "./manager/assessments/Assessments";
+
 function App() {
   const onLogin = (role) => {
     localStorage.setItem("role", role);
@@ -55,7 +60,7 @@ function App() {
           }
         />
 
-        {/* Manager Routes */}
+        {/* ================= Manager Routes ================= */}
 
         <Route
           path="/manager"
@@ -65,22 +70,24 @@ function App() {
             </ProtectedRoute>
           }
         >
+          {/* Dashboard */}
           <Route index element={<Dashboard />} />
 
+          {/* Existing Modules */}
           <Route path="candidates" element={<Candidates />} />
-
           <Route path="qualifiers" element={<Qualifiers />} />
-
           <Route path="referrals" element={<Referrals />} />
-
           <Route path="employees" element={<Employees />} />
-
           <Route path="schedule" element={<ScheduleInterview />} />
-
           <Route path="reviews" element={<EmployeeReviews />} />
+
+          {/* New Modules */}
+          <Route path="coding" element={<CodingQuestions />} />
+          <Route path="mcq" element={<MCQQuestions />} />
+          <Route path="assessments" element={<Assessments />} />
         </Route>
 
-        {/* Employee Routes */}
+        {/* ================= Employee Routes ================= */}
 
         <Route
           path="/employee/*"
@@ -91,7 +98,7 @@ function App() {
           }
         />
 
-        {/* Candidate Routes */}
+        {/* ================= Candidate Routes ================= */}
 
         <Route
           path="/candidate/*"
@@ -102,7 +109,7 @@ function App() {
           }
         />
 
-        {/* Default */}
+        {/* ================= Default ================= */}
 
         <Route
           path="*"
