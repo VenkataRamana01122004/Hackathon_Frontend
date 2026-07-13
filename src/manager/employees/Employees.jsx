@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import ManagerNavbar from "./ManagerNavbar";
+import { useState } from "react";
+import "./Employees.css";
 
-const Employees = () => {
+function Employees() {
   const [employees] = useState([
     {
       employeeId: "EMP0001",
@@ -9,7 +9,8 @@ const Employees = () => {
       email: "rahul@gmail.com",
       designation: "Frontend Developer",
       project: "Interview Portal",
-      managerId: "MGR0001",
+      interviews: 5,
+      status: "Available",
     },
     {
       employeeId: "EMP0002",
@@ -17,7 +18,8 @@ const Employees = () => {
       email: "priya@gmail.com",
       designation: "Backend Developer",
       project: "Interview Portal",
-      managerId: "MGR0001",
+      interviews: 3,
+      status: "Busy",
     },
     {
       employeeId: "EMP0003",
@@ -25,41 +27,87 @@ const Employees = () => {
       email: "arjun@gmail.com",
       designation: "QA Engineer",
       project: "Interview Portal",
-      managerId: "MGR0002",
+      interviews: 2,
+      status: "Available",
     },
   ]);
 
   return (
-    <div>
-      <h2>Employees</h2>
+    <div className="employees-page">
 
-      <table border="1" cellPadding="8" cellSpacing="0">
+      <div className="employees-header">
+        <h2>Employees</h2>
+
+        <input
+          type="text"
+          placeholder="Search Employee..."
+        />
+      </div>
+
+      <table className="employee-table">
+
         <thead>
+
           <tr>
+
             <th>Employee ID</th>
+
             <th>Name</th>
+
             <th>Email</th>
+
             <th>Designation</th>
+
             <th>Project</th>
-            <th>Manager ID</th>
+
+            <th>Interviews</th>
+
+            <th>Status</th>
+
           </tr>
+
         </thead>
 
         <tbody>
+
           {employees.map((employee) => (
+
             <tr key={employee.employeeId}>
+
               <td>{employee.employeeId}</td>
+
               <td>{employee.fullName}</td>
+
               <td>{employee.email}</td>
+
               <td>{employee.designation}</td>
+
               <td>{employee.project}</td>
-              <td>{employee.managerId}</td>
+
+              <td>{employee.interviews}</td>
+
+              <td>
+                <span
+                  className={
+                    employee.status === "Available"
+                      ? "status available"
+                      : "status busy"
+                  }
+                >
+                  {employee.status}
+                </span>
+              </td>
+
             </tr>
+
           ))}
+
         </tbody>
+
       </table>
+
     </div>
   );
-};
+}
 
 export default Employees;

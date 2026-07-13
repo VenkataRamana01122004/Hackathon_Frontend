@@ -1,0 +1,55 @@
+.candidate-page{
+
+    padding:30px;
+
+}
+
+.candidate-top{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+}
+
+.candidate-top h1{
+
+    color:#003B75;
+
+    font-size:30px;
+
+    font-weight:700;
+
+}
+
+.candidate-toolbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+    flex-wrap:wrap;
+
+    gap:20px;
+
+}
+
+@media(max-width:900px){
+
+.candidate-toolbar{
+
+    flex-direction:column;
+
+    align-items:stretch;
+
+}
+
+}

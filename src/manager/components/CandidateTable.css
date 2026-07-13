@@ -1,0 +1,61 @@
+.score{
+
+    display:inline-block;
+
+    padding:8px 12px;
+
+    border-radius:8px;
+
+    background:#E0F2FE;
+
+    color:#005EB8;
+
+    font-weight:700;
+
+}
+
+.assign-role-btn{
+
+    border:none;
+
+    background:#005EB8;
+
+    color:white;
+
+    padding:8px 14px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    transition:.3s;
+
+}
+
+.assign-role-btn:hover{
+
+    background:#003B75;
+
+}
+
+.assigned-role{
+
+    display:inline-block;
+
+    padding:8px 12px;
+
+    border-radius:20px;
+
+    background:#DCFCE7;
+
+    color:#15803D;
+
+    font-weight:600;
+
+}

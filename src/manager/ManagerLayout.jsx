@@ -1,19 +1,39 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import ManagerNavBar from "./ManagerNavBar";
-import ManagerHome from "./ManagerHome";
-import Employees from "./Employees";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 
-const ManagerLayout = ({ logout }) => (
-  <>
-    <ManagerNavBar logout={logout} />
+import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
 
-    <Routes>
-      <Route path="/" element={<ManagerHome />} />
-      <Route path="employees" element={<Employees />} />
+import "./ManagerLayout.css";
 
-      <Route path="*" element={<Navigate to="/manager" replace />} />
-    </Routes>
-  </>
-);
+function ManagerLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  return (
+    <div className="manager-layout">
+
+      <Sidebar
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
+      />
+
+      <div
+        className={`manager-main ${
+          sidebarOpen ? "expanded" : "collapsed"
+        }`}
+      >
+        <Topbar
+          isOpen={sidebarOpen}
+          setIsOpen={setSidebarOpen}
+        />
+
+        <main className="manager-content">
+          <Outlet />
+        </main>
+      </div>
+
+    </div>
+  );
+}
 
 export default ManagerLayout;

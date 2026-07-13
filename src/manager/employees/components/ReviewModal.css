@@ -1,0 +1,108 @@
+.rating-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+}
+
+.rating{
+
+    display:flex;
+
+    gap:8px;
+
+}
+
+.rating svg{
+
+    font-size:24px;
+
+    cursor:pointer;
+
+}
+
+.filled{
+
+    color:#F59E0B;
+
+}
+
+.empty{
+
+    color:#CBD5E1;
+
+}
+
+.review-body{
+
+    padding:25px;
+
+}
+
+.form-group{
+
+    margin-top:20px;
+
+}
+
+.form-group label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-weight:600;
+
+    color:#003B75;
+
+}
+
+.form-group textarea,
+.form-group select{
+
+    width:100%;
+
+    padding:12px;
+
+    border:1px solid #D9E2EC;
+
+    border-radius:10px;
+
+}
+
+.review-footer{
+
+    padding:20px;
+
+    display:flex;
+
+    justify-content:flex-end;
+
+}
+
+.submit-review-btn{
+
+    border:none;
+
+    background:#005EB8;
+
+    color:white;
+
+    padding:14px 28px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+}
+
+.submit-review-btn:hover{
+
+    background:#003B75;
+
+}

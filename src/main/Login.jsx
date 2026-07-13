@@ -1,76 +1,89 @@
-import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Mail, Lock } from "lucide-react";
+import bgImage from "../assets/login-bg.jpeg";
+import "./Login.css";
 
-function Login({ onLogin }) {
+export default function Login({ onLogin }) {
   const navigate = useNavigate();
 
-  const [data, setData] = useState({
-    email: "",
-    password: ""
-  });
+  const [role, setRole] = useState("manager");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleChange = (e) => {
-    setData({
-      ...data,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleSubmit = (e) => {
+  e.preventDefault();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  console.log("Submit clicked");
 
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        data
-      );
+  if (!email || !password) {
+    console.log("Validation failed");
+    alert("Please enter email and password.");
+    return;
+  }
 
-      // store user
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+  console.log("Validation passed");
 
-      const role = res.data.role?.toLowerCase(); // ✅ normalize role
+  localStorage.setItem("role", role);
+  onLogin(role);
 
-      if (role === "manager") {
-        onLogin("manager");
-        navigate("/manager", { replace: true });
-      } 
-      else if (role === "employee") {
-        onLogin("employee");
-        navigate("/employee", { replace: true });
-      } 
-      else if (role === "candidate") {
-        onLogin("candidate");
-        navigate("/candidate", { replace: true });
-      } 
-      else {
-        alert("Unknown role");
-      }
+  console.log("Navigating to:", `/${role}`);
 
-    } catch (err) {
-      alert("Invalid Login");
-      console.log(err);
-    }
-  };
+  navigate(`/${role}`);
+};
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        name="email"
-        onChange={handleChange}
-        placeholder="Email"
-      />
+    <div className="login-page" 
+    style={{
+    backgroundImage: `url(${bgImage})`,
+  }}>
+      <div className="login-left">
 
-      <input
-        type="password"
-        name="password"
-        onChange={handleChange}
-        placeholder="Password"
-      />
+      </div>
 
-      <button type="submit">Login</button>
-    </form>
+      <div className="login-right">
+
+        <form className="login-card" onSubmit={handleSubmit}>
+
+          <h2>Welcome Back</h2>
+
+          <p>Sign in to continue</p>
+
+          
+
+          <label>Email</label>
+
+          <div className="input-box">
+            <Mail size={18} />
+
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <label>Password</label>
+
+          <div className="input-box">
+            <Lock size={18} />
+
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <button type="submit">
+            Login
+          </button>
+
+        </form>
+
+      </div>
+    </div>
   );
 }
-
-export default Login;
