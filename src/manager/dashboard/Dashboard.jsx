@@ -52,19 +52,7 @@ function Dashboard() {
 
       </div>
 
-      <div className="dashboard-actions">
-
-        <button
-          onClick={() => navigate("/manager/schedule")}
-        >
-          <FaPlus />
-
-          Schedule Interview
-
-        </button>
-
-      </div>
-
+      
       <div className="dashboard-section">
 
         <h2>Today's Interviews</h2>

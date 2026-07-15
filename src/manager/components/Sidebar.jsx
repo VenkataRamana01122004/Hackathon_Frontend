@@ -32,11 +32,6 @@ function Sidebar({ isOpen }) {
       icon: <FaUserCheck />,
     },
     {
-      title: "Referral Candidates",
-      path: "/manager/referrals",
-      icon: <FaUserTie />,
-    },
-    {
       title: "Employees",
       path: "/manager/employees",
       icon: <FaUsers />,

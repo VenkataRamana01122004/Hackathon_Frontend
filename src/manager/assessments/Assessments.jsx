@@ -30,13 +30,18 @@ function Assessments() {
 
         <div className="assessment-page">
 
-            <div className="assessment-header">
+            <div className="manager-page-header assessment-header">
 
-                <h1>Assessment Reports</h1>
+                <div>
+                    <h1>Assessment Reports</h1>
+                    <p>Review candidate coding and MCQ assessment results</p>
+                </div>
 
             </div>
 
-            <table>
+            <div className="manager-table-card assessment-table-card">
+
+            <table className="manager-table">
 
                 <thead>
 
@@ -115,6 +120,8 @@ function Assessments() {
                 </tbody>
 
             </table>
+
+            </div>
 
             {
 

@@ -288,19 +288,15 @@ function AddMCQModal({ close, refresh }) {
 
                 key={index}
 
-                style={{
-
-                  display:"flex",
-
-                  alignItems:"center",
-
-                  gap:"10px",
-
-                  marginBottom:"12px"
-
-                }}
+                className="option-row"
 
               >
+
+                <span className="option-label">
+
+                  {index + 1}
+
+                </span>
 
                 {
 
@@ -340,27 +336,33 @@ function AddMCQModal({ close, refresh }) {
 
                 }
 
-                <input
+                <div className="option-input-wrap">
 
-                  style={{flex:1}}
+                  <input
 
-                  placeholder={`Option ${index+1}`}
+                    className="option-input"
 
-                  value={option}
+                    type="text"
 
-                  onChange={(e)=>
+                    placeholder={`Option ${index+1}`}
 
-                    handleOptionChange(
+                    value={option}
 
-                      index,
+                    onChange={(e)=>
 
-                      e.target.value
+                      handleOptionChange(
 
-                    )
+                        index,
 
-                  }
+                        e.target.value
 
-                />
+                      )
+
+                    }
+
+                  />
+
+                </div>
 
               </div>
 

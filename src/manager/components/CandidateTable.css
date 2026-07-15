@@ -1,61 +1,184 @@
-.score{
-
-    display:inline-block;
-
-    padding:8px 12px;
-
-    border-radius:8px;
-
-    background:#E0F2FE;
-
-    color:#005EB8;
-
-    font-weight:700;
-
+.candidate-table-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
 }
 
-.assign-role-btn{
-
-    border:none;
-
-    background:#005EB8;
-
-    color:white;
-
-    padding:8px 14px;
-
-    border-radius:8px;
-
-    cursor:pointer;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    transition:.3s;
-
+.candidate-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.assign-role-btn:hover{
-
-    background:#003B75;
-
+.candidate-table thead {
+  background: #2563eb;
 }
 
-.assigned-role{
+.candidate-table thead th {
+  color: white;
+  padding: 18px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
 
-    display:inline-block;
+.candidate-table tbody td {
+  padding: 22px 18px;
+  border-bottom: 1px solid #ececec;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 16px;
+}
 
-    padding:8px 12px;
+.candidate-table tbody tr:last-child td {
+  border-bottom: none;
+}
 
-    border-radius:20px;
+.candidate-table tbody tr:hover {
+  background: #f8fbff;
+}
 
-    background:#DCFCE7;
+/* Candidate */
 
-    color:#15803D;
+.candidate-details {
+  text-align: left;
+}
 
-    font-weight:600;
+.candidate-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+}
 
+.candidate-email {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Score */
+
+.score {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #005eb8;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+/* Status */
+
+.status {
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status.eligible {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status.interview-scheduled {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status.qualified {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.status.rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Assign */
+
+.assign-role-btn {
+  background: #005eb8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.assign-role-btn:hover {
+  background: #003b75;
+}
+
+.assigned-role {
+  color: #005eb8;
+  font-weight: 600;
+}
+
+/* Action Buttons */
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.action-buttons button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: .3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-btn {
+  background: #2563eb;
+}
+
+.resume-btn {
+  background: #16a34a;
+}
+
+.schedule-btn {
+  background: #f59e0b;
+}
+
+.view-btn:hover {
+  background: #1d4ed8;
+}
+
+.resume-btn:hover {
+  background: #15803d;
+}
+
+.schedule-btn:hover {
+  background: #d97706;
+}
+
+.no-data {
+  text-align: center;
+  padding: 30px;
+  color: #777;
+  font-size: 16px;
+}
+
+@media (max-width: 1100px) {
+  .candidate-table-card {
+    overflow-x: auto;
+  }
+
+  .candidate-table {
+    min-width: 1000px;
+  }
 }

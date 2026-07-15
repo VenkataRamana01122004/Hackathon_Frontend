@@ -93,9 +93,12 @@ function MCQQuestions() {
 
     <div className="coding-page">
 
-      <div className="coding-header">
+      <div className="manager-page-header">
 
-        <h1>MCQ Questions</h1>
+        <div>
+          <h1>MCQ Questions</h1>
+          <p>Manage multiple-choice questions and answer sets</p>
+        </div>
 
         <button
           className="primary-btn"
@@ -107,7 +110,7 @@ function MCQQuestions() {
 
       </div>
 
-      <div className="coding-toolbar">
+      <div className="manager-toolbar">
 
         <input
           placeholder="Search Question"
@@ -135,9 +138,9 @@ function MCQQuestions() {
 
       </div>
 
-      <div className="coding-table">
+      <div className="manager-table-card">
 
-        <table>
+        <table className="manager-table">
 
           <thead>
 

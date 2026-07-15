@@ -7,7 +7,6 @@ import Topbar from "./components/Topbar";
 import Dashboard from "./dashboard/Dashboard";
 import Candidates from "./candidates/Candidates";
 import Qualifiers from "./qualifiers/Qualifiers";
-import Referrals from "./candidates/Referrals";
 import Employees from "./employees/Employees";
 import ScheduleInterview from "./interview/ScheduleInterview";
 import EmployeeReviews from "./reviews/EmployeeReviews";
@@ -43,7 +42,6 @@ function ManagerLayout() {
             <Route index element={<Dashboard />} />
             <Route path="candidates" element={<Candidates />} />
             <Route path="qualifiers" element={<Qualifiers />} />
-            <Route path="referrals" element={<Referrals />} />
             <Route path="employees" element={<Employees />} />
             <Route path="schedule" element={<ScheduleInterview />} />
             <Route path="reviews" element={<EmployeeReviews />} />

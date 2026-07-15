@@ -99,9 +99,12 @@ function CodingQuestions() {
 
     <div className="coding-page">
 
-      <div className="coding-header">
+      <div className="manager-page-header">
 
-        <h1>Coding Questions</h1>
+        <div>
+          <h1>Coding Questions</h1>
+          <p>Manage coding challenges and test cases</p>
+        </div>
 
         <button
           className="primary-btn"
@@ -113,7 +116,7 @@ function CodingQuestions() {
 
       </div>
 
-      <div className="coding-toolbar">
+      <div className="manager-toolbar">
 
         <input
           placeholder="Search question..."
@@ -144,9 +147,9 @@ function CodingQuestions() {
 
       </div>
 
-      <div className="coding-table">
+      <div className="manager-table-card">
 
-        <table>
+        <table className="manager-table">
 
           <thead>
 
