@@ -1,0 +1,186 @@
+{
+  "currentEmployee": {
+    "id": "emp001",
+    "name": "Sreelakshmi R",
+    "role": "Senior Software Engineer",
+    "department": "Engineering",
+    "avatar": null,
+    "email": "sree@company.com"
+  },
+  "incomingReviews": [
+    {
+      "id": "rev001",
+      "candidateName": "Arjun Menon",
+      "candidateRole": "Backend Developer",
+      "candidateEmail": "arjun.menon@candidate.com",
+      "assignedBy": "John Manager",
+      "assignedDate": "2026-07-10",
+      "scheduledDate": "2026-07-16",
+      "scheduledTime": "10:00 AM",
+      "status": "Pending",
+      "priority": "High",
+      "interviewType": "Technical",
+      "myRating": null,
+      "myComments": null,
+      "myApproval": null,
+      "skills": ["Node.js", "MongoDB", "AWS"],
+      "resumeUrl": "#",
+      "previousScores": {
+        "round1": 82,
+        "round2": 76
+      }
+    },
+    {
+      "id": "rev002",
+      "candidateName": "Priya Nair",
+      "candidateRole": "Frontend Developer",
+      "candidateEmail": "priya.nair@candidate.com",
+      "assignedBy": "John Manager",
+      "assignedDate": "2026-07-11",
+      "scheduledDate": "2026-07-17",
+      "scheduledTime": "2:00 PM",
+      "status": "Pending",
+      "priority": "Medium",
+      "interviewType": "Behavioral",
+      "myRating": null,
+      "myComments": null,
+      "myApproval": null,
+      "skills": ["React", "TypeScript", "CSS"],
+      "resumeUrl": "#",
+      "previousScores": {
+        "round1": 88,
+        "round2": 84
+      }
+    },
+    {
+      "id": "rev003",
+      "candidateName": "Kiran Raj",
+      "candidateRole": "Full Stack Developer",
+      "candidateEmail": "kiran.raj@candidate.com",
+      "assignedBy": "Sarah Lead",
+      "assignedDate": "2026-07-12",
+      "scheduledDate": "2026-07-18",
+      "scheduledTime": "11:30 AM",
+      "status": "Scheduled",
+      "priority": "High",
+      "interviewType": "Technical",
+      "myRating": null,
+      "myComments": null,
+      "myApproval": null,
+      "skills": ["React", "Node.js", "PostgreSQL", "Docker"],
+      "resumeUrl": "#",
+      "previousScores": {
+        "round1": 90,
+        "round2": 88
+      }
+    }
+  ],
+  "reviewHistory": [
+    {
+      "id": "hist001",
+      "candidateName": "Ravi Kumar",
+      "candidateRole": "DevOps Engineer",
+      "assignedBy": "John Manager",
+      "reviewedDate": "2026-07-01",
+      "status": "Approved",
+      "myRating": 4,
+      "myComments": "Strong DevOps background. Excellent knowledge of CI/CD pipelines and Kubernetes.",
+      "myApproval": "Recommend",
+      "technical": 4,
+      "communication": 4,
+      "problemSolving": 5,
+      "teamFit": 4,
+      "strengths": "Deep expertise in Kubernetes and Docker. Well-versed in GitOps practices.",
+      "improvements": "Could improve on cloud cost optimization strategies.",
+      "type": "given"
+    },
+    {
+      "id": "hist002",
+      "candidateName": "Meena S",
+      "candidateRole": "QA Engineer",
+      "assignedBy": "Sarah Lead",
+      "reviewedDate": "2026-06-28",
+      "status": "Rejected",
+      "myRating": 2,
+      "myComments": "Lacks hands-on automation experience. Test case coverage was minimal.",
+      "myApproval": "Do Not Recommend",
+      "technical": 2,
+      "communication": 3,
+      "problemSolving": 2,
+      "teamFit": 3,
+      "strengths": "Good communication and team attitude.",
+      "improvements": "Needs significant improvement in automation frameworks like Selenium/Cypress.",
+      "type": "given"
+    },
+    {
+      "id": "hist003",
+      "candidateName": "Aditya Verma",
+      "candidateRole": "Data Scientist",
+      "assignedBy": "John Manager",
+      "reviewedDate": "2026-06-20",
+      "status": "Approved",
+      "myRating": 5,
+      "myComments": "Exceptional candidate. Demonstrated strong ML knowledge and statistical thinking.",
+      "myApproval": "Strongly Recommend",
+      "technical": 5,
+      "communication": 5,
+      "problemSolving": 5,
+      "teamFit": 5,
+      "strengths": "Outstanding ML model building skills. Articulate and collaborative.",
+      "improvements": "None significant.",
+      "type": "approved"
+    },
+    {
+      "id": "hist004",
+      "candidateName": "Sneha Pillai",
+      "candidateRole": "UI/UX Designer",
+      "assignedBy": "John Manager",
+      "reviewedDate": "2026-06-15",
+      "status": "Approved",
+      "myRating": 4,
+      "myComments": "Great design sensibility and understanding of user flows.",
+      "myApproval": "Recommend",
+      "technical": 4,
+      "communication": 5,
+      "problemSolving": 4,
+      "teamFit": 5,
+      "strengths": "Excellent portfolio and creative problem solving.",
+      "improvements": "More exposure to design systems at scale.",
+      "type": "approved"
+    }
+  ],
+  "dashboardStats": {
+    "totalReviewsReceived": 6,
+    "pendingReviews": 2,
+    "scheduledReviews": 1,
+    "completedReviews": 3,
+    "approvedCount": 3,
+    "rejectedCount": 1
+  },
+  "nextCandidates": [
+    {
+      "id": "nc001",
+      "name": "Arjun Menon",
+      "role": "Backend Developer",
+      "date": "2026-07-16",
+      "time": "10:00 AM",
+      "interviewType": "Technical"
+    },
+    {
+      "id": "nc002",
+      "name": "Priya Nair",
+      "role": "Frontend Developer",
+      "date": "2026-07-17",
+      "time": "2:00 PM",
+      "interviewType": "Behavioral"
+    },
+    {
+      "id": "nc003",
+      "name": "Kiran Raj",
+      "role": "Full Stack Developer",
+      "date": "2026-07-18",
+      "time": "11:30 AM",
+      "interviewType": "Technical"
+    }
+  ]
+}

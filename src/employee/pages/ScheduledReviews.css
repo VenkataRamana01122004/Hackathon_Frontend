@@ -1,0 +1,294 @@
+.sr-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sr-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sr-page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 26px;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.sr-page-header p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.sr-total-badge {
+  background: #2563eb;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Timeline */
+.sr-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sr-date-group {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.sr-date-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+  background: white;
+  border-radius: 14px;
+  padding: 16px 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e2e8f0;
+  position: sticky;
+  top: 90px;
+}
+
+.sr-date-label.today {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.sr-date-label.past {
+  opacity: 0.6;
+}
+
+.sr-date-day {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.sr-date-label.today .sr-date-day {
+  color: #2563eb;
+}
+
+.sr-date-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sr-date-month {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.sr-date-weekday {
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sr-today-tag {
+  background: #2563eb;
+  color: white;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.sr-day-cards {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sr-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid #e2e8f0;
+  transition: 0.2s;
+}
+
+.sr-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1);
+}
+
+.sr-card-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.sr-card-divider {
+  height: 1px;
+  background: #f1f5f9;
+}
+
+.sr-card-content {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.sr-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #9333ea);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sr-card-info {
+  flex: 1;
+}
+
+.sr-card-info h3 {
+  color: #1e293b;
+  font-size: 16px;
+  margin-bottom: 3px;
+}
+
+.sr-card-info p {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.sr-card-tags {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.sr-tag-interview {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sr-priority {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sr-priority-high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.sr-priority-medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.sr-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.sr-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.sr-status {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sr-status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.sr-status-scheduled {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.sr-status-completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.sr-skills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sr-skill-tag {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .sr-date-group {
+    flex-direction: column;
+  }
+
+  .sr-date-label {
+    flex-direction: row;
+    min-width: unset;
+    width: 100%;
+    gap: 14px;
+  }
+
+  .sr-card-content {
+    flex-wrap: wrap;
+  }
+
+  .sr-card-right {
+    align-items: flex-start;
+  }
+}
