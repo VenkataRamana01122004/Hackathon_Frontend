@@ -14,15 +14,13 @@ import "./EmployeeDashboard.css";
 
 function EmployeeDashboard() {
   const navigate = useNavigate();
-  const { dashboardStats, incomingReviews, nextCandidates, reviewHistory } =
-    reviewsData;
+  const { incomingReviews, nextCandidates, reviewHistory } = reviewsData;
 
-  const pendingReviews = incomingReviews.filter(
-    (r) => r.status === "Pending"
-  );
-  const scheduledReviews = incomingReviews.filter(
-    (r) => r.status === "Scheduled"
-  );
+  // Compute all stats from actual data — never use hardcoded numbers
+  const pendingReviews = incomingReviews.filter((r) => r.status === "Pending");
+  const scheduledReviews = incomingReviews.filter((r) => r.status === "Scheduled");
+  const completedReviews = incomingReviews.filter((r) => r.status === "Completed");
+  const totalReceived = incomingReviews.length;
 
   return (
     <div className="emp-dashboard">
@@ -42,27 +40,27 @@ function EmployeeDashboard() {
         </div>
       </div>
 
-      {/* Stat Cards */}
+      {/* Stat Cards — values computed from real data */}
       <div className="emp-dashboard-cards">
         <EmpStatCard
           title="Reviews Received"
-          value={dashboardStats.totalReviewsReceived}
+          value={totalReceived}
           icon={<FaInbox />}
           color="#2563EB"
           subtitle="Total assigned to you"
-          onClick={() => navigate("/employee/incoming-reviews")}
+          onClick={() => navigate("/employee/incoming-reviews", { state: { filter: "All" } })}
         />
         <EmpStatCard
           title="Pending Reviews"
-          value={dashboardStats.pendingReviews}
+          value={pendingReviews.length}
           icon={<FaClock />}
           color="#F59E0B"
           subtitle="Awaiting your action"
-          onClick={() => navigate("/employee/incoming-reviews")}
+          onClick={() => navigate("/employee/incoming-reviews", { state: { filter: "Pending" } })}
         />
         <EmpStatCard
           title="Scheduled Reviews"
-          value={dashboardStats.scheduledReviews}
+          value={scheduledReviews.length}
           icon={<FaCalendarAlt />}
           color="#EA580C"
           subtitle="Upcoming interviews"
@@ -70,7 +68,7 @@ function EmployeeDashboard() {
         />
         <EmpStatCard
           title="Completed Reviews"
-          value={dashboardStats.completedReviews}
+          value={reviewHistory.length}
           icon={<FaCheckCircle />}
           color="#16A34A"
           subtitle="Reviews submitted"
@@ -88,7 +86,7 @@ function EmployeeDashboard() {
             </h2>
             <button
               className="emp-see-all-btn"
-              onClick={() => navigate("/employee/incoming-reviews")}
+              onClick={() => navigate("/employee/incoming-reviews", { state: { filter: "Pending" } })}
             >
               See All <FaArrowRight />
             </button>
@@ -124,7 +122,7 @@ function EmployeeDashboard() {
                   </div>
                   <button
                     className="emp-action-btn"
-                    onClick={() => navigate("/employee/incoming-reviews")}
+                    onClick={() => navigate("/employee/incoming-reviews", { state: { filter: "Pending" } })}
                   >
                     Review <FaArrowRight />
                   </button>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   FaEye,
   FaCheckCircle,
@@ -334,9 +335,13 @@ function ReviewDetailModal({ review, onClose, onSubmitReview }) {
 }
 
 function IncomingReviews() {
+  const location = useLocation();
+  // Read filter passed from dashboard navigation state (e.g. { state: { filter: "Pending" } })
+  const initialFilter = location.state?.filter || "All";
+
   const [reviews, setReviews] = useState(reviewsData.incomingReviews);
   const [selectedReview, setSelectedReview] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("All");
+  const [filterStatus, setFilterStatus] = useState(initialFilter);
 
   const handleSubmitReview = (id, formData) => {
     setReviews((prev) =>
