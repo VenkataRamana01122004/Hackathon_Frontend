@@ -6,27 +6,24 @@ import CandidateTable from "../components/CandidateTable";
 import CandidateModal from "../components/CandidateModal";
 import ResumeModal from "../components/ResumeModal";
 import ScheduleModal from "../components/ScheduleModal";
-
+import AddCandidateModal from "../components/AddCandidateModal";
+import { FaPlus } from "react-icons/fa";
 import "./Candidate.css";
 
 function Candidates() {
-
   const [search, setSearch] = useState("");
-
   const [role, setRole] = useState("");
-
   const [experience, setExperience] = useState("");
-
   const [status, setStatus] = useState("");
+
+  const [showDetails, setShowDetails] = useState(false);
+  const [showResume, setShowResume] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [showAddCandidate, setShowAddCandidate] = useState(false);
 
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-  const [showDetails, setShowDetails] = useState(false);
-
-  const [showResume, setShowResume] = useState(false);
-
-  const candidates = [
-
+  const [candidates, setCandidates] = useState([
     {
       id: 1,
       name: "Rahul Sharma",
@@ -38,7 +35,6 @@ function Candidates() {
       skills: "React, JavaScript, HTML, CSS",
       status: "Eligible",
     },
-
     {
       id: 2,
       name: "Anjali Singh",
@@ -50,7 +46,6 @@ function Candidates() {
       skills: "Java, Spring Boot, MySQL",
       status: "Interview Scheduled",
     },
-
     {
       id: 3,
       name: "Arun Kumar",
@@ -62,7 +57,6 @@ function Candidates() {
       skills: "Python, TensorFlow, PyTorch",
       status: "Qualified",
     },
-
     {
       id: 4,
       name: "Priya Reddy",
@@ -73,12 +67,10 @@ function Candidates() {
       education: "B.Tech CSE",
       skills: "AWS, Docker, Kubernetes",
       status: "Eligible",
-    }
-
-  ];
+    },
+  ]);
 
   const filteredCandidates = candidates.filter((candidate) => {
-
     const matchesSearch =
       candidate.name.toLowerCase().includes(search.toLowerCase()) ||
       candidate.email.toLowerCase().includes(search.toLowerCase());
@@ -99,42 +91,42 @@ function Candidates() {
       matchesExperience &&
       matchesStatus
     );
-
   });
 
   const openCandidate = (candidate) => {
-
     setSelectedCandidate(candidate);
-
     setShowDetails(true);
-
   };
 
   const openResume = (candidate) => {
-
     setSelectedCandidate(candidate);
-
     setShowResume(true);
-
   };
 
-const [showSchedule, setShowSchedule] = useState(false);
-
-const scheduleInterview = (candidate) => {
-
+  const scheduleInterview = (candidate) => {
     setSelectedCandidate(candidate);
-
     setShowSchedule(true);
+  };
 
-};
+  const addCandidate = (newCandidate) => {
+    setCandidates((prev) => [...prev, newCandidate]);
+  };
 
   return (
-
     <div className="candidate-page">
 
       <div className="candidate-top">
 
         <h1>Candidates</h1>
+
+        <button
+          className="add-candidate-btn"
+          onClick={() => setShowAddCandidate(true)}
+        >
+          <FaPlus />
+          <span>Add Candidate</span>
+
+        </button>
 
       </div>
 
@@ -157,42 +149,35 @@ const scheduleInterview = (candidate) => {
       </div>
 
       <CandidateTable
-
         candidates={filteredCandidates}
-
         onView={openCandidate}
-
         onResume={openResume}
-
         onSchedule={scheduleInterview}
-
       />
 
       <CandidateModal
-
         candidate={showDetails ? selectedCandidate : null}
-
         onClose={() => setShowDetails(false)}
-
       />
 
       <ResumeModal
-
         candidate={showResume ? selectedCandidate : null}
-
         onClose={() => setShowResume(false)}
-
       />
+
       <ScheduleModal
         candidate={showSchedule ? selectedCandidate : null}
         onClose={() => setShowSchedule(false)}
+      />
 
+      <AddCandidateModal
+        isOpen={showAddCandidate}
+        onClose={() => setShowAddCandidate(false)}
+        onAdd={addCandidate}
       />
 
     </div>
-
   );
-
 }
 
 export default Candidates;

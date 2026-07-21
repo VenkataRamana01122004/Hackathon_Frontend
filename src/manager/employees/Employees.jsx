@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaSearch } from "react-icons/fa";
 import "./Employees.css";
 
 function Employees() {
@@ -34,78 +35,77 @@ function Employees() {
 
   return (
     <div className="employees-page">
+      <h1 className="employees-title">Employees</h1>
 
-      <div className="employees-header">
-        <h2>Employees</h2>
+      <div className="employees-toolbar">
+        <div className="search-box">
+          <FaSearch />
+          <input type="text" placeholder="Search Employee..." />
+        </div>
 
-        <input
-          type="text"
-          placeholder="Search Employee..."
-        />
+        <div className="filter-group">
+          <select>
+            <option>All Designations</option>
+            <option>Frontend Developer</option>
+            <option>Backend Developer</option>
+            <option>QA Engineer</option>
+          </select>
+
+          <select>
+            <option>All Status</option>
+            <option>Available</option>
+            <option>Busy</option>
+          </select>
+        </div>
       </div>
 
-      <table className="employee-table">
-
-        <thead>
-
-          <tr>
-
-            <th>Employee ID</th>
-
-            <th>Name</th>
-
-            <th>Email</th>
-
-            <th>Designation</th>
-
-            <th>Project</th>
-
-            <th>Interviews</th>
-
-            <th>Status</th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          {employees.map((employee) => (
-
-            <tr key={employee.employeeId}>
-
-              <td>{employee.employeeId}</td>
-
-              <td>{employee.fullName}</td>
-
-              <td>{employee.email}</td>
-
-              <td>{employee.designation}</td>
-
-              <td>{employee.project}</td>
-
-              <td>{employee.interviews}</td>
-
-              <td>
-                <span
-                  className={
-                    employee.status === "Available"
-                      ? "status available"
-                      : "status busy"
-                  }
-                >
-                  {employee.status}
-                </span>
-              </td>
-
+      <div className="table-card">
+        <table className="employee-table">
+          <thead>
+            <tr>
+              <th>Employee ID</th>
+              <th>Employee</th>
+              <th>Designation</th>
+              <th>Project</th>
+              <th>Interviews</th>
+              <th>Status</th>
             </tr>
+          </thead>
 
-          ))}
+          <tbody>
+            {employees.map((employee) => (
+              <tr key={employee.employeeId}>
+                <td>{employee.employeeId}</td>
 
-        </tbody>
+                <td>
+                  <div className="employee-info">
+                    <h4>{employee.fullName}</h4>
+                    <span>{employee.email}</span>
+                  </div>
+                </td>
 
-      </table>
+                <td>{employee.designation}</td>
 
+                <td>{employee.project}</td>
+
+                <td>{employee.interviews}</td>
+
+                <td>
+                  <span
+                    className={`status-badge ${
+                      employee.status === "Available"
+                        ? "available"
+                        : "busy"
+                    }`}
+                  >
+                    {employee.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
