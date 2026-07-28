@@ -1,0 +1,35 @@
+.employee-dashboard{
+
+    padding:30px;
+
+}
+
+.dashboard-header{
+
+    margin-bottom:30px;
+
+}
+
+.dashboard-header h1{
+
+    color:#003B75;
+
+    margin-bottom:6px;
+
+}
+
+.dashboard-header p{
+
+    color:#64748B;
+
+}
+
+.candidate-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+
+    gap:25px;
+
+}

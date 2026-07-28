@@ -27,3 +27,4 @@ dist-ssr
 .env.local
 .vscode
 .DS_Store
+src/candidate main

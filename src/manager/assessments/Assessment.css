@@ -1,0 +1,45 @@
+.assessment-page{
+
+    padding:25px;
+    min-height:100vh;
+    background:white;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.assessment-header{
+
+    margin-bottom:25px;
+
+}
+
+.assessment-header h1{
+
+    margin:0;
+    color:#1f2937;
+
+}
+
+.assessment-table-card{
+
+    margin-top:10px;
+
+}
+
+.view-btn{
+
+    background:#2563EB;
+    color:white;
+    border:none;
+    padding:8px 15px;
+    border-radius:6px;
+    cursor:pointer;
+
+}
+
+.view-btn:hover{
+
+    background:#1d4ed8;
+
+}

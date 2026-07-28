@@ -1,0 +1,137 @@
+.assigned-card{
+
+    background:white;
+
+    border-radius:16px;
+
+    padding:22px;
+
+    box-shadow:0 10px 20px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.assigned-card:hover{
+
+    transform:translateY(-6px);
+
+}
+
+.assigned-header{
+
+    display:flex;
+
+    gap:15px;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+}
+
+.avatar{
+
+    font-size:55px;
+
+    color:#005EB8;
+
+}
+
+.assigned-header h3{
+
+    color:#003B75;
+
+}
+
+.assigned-header p{
+
+    color:#64748B;
+
+}
+
+.assigned-details{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+    margin-bottom:20px;
+
+}
+
+.assigned-status{
+
+    margin-bottom:20px;
+
+}
+
+.assigned-status span{
+
+    background:#FFF7ED;
+
+    color:#EA580C;
+
+    padding:8px 14px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.assigned-actions{
+
+    display:flex;
+
+    justify-content:space-between;
+
+}
+
+.resume-btn{
+
+    background:#DC2626;
+
+    color:white;
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+}
+
+.review-btn{
+
+    background:#005EB8;
+
+    color:white;
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+}
+
+.resume-btn:hover{
+
+    background:#B91C1C;
+
+}
+
+.review-btn:hover{
+
+    background:#003B75;
+
+}

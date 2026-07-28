@@ -1,30 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
+import QuestionPanel from "./mcq/QuestionPanel.jsx";
+import QuestionGrid from "./mcq/QuestionGrid.jsx";
+import CamWindow from "./mcq/CamWindow.jsx";
+import SecurityPanel from "./mcq/SecurityPanel.jsx";
+// import { hasSubmittedProfile } from "./utils/profile.js";
+import axios from "axios";
+import "./candidate.css";
 
-// --- CONFIGURATION & MOCK DATA ---
+
+// --- CONFIGURATION ---
 const BACKEND_URL = 'http://localhost:5000/api/interview/submitbitsassessment';
-const CANDIDATE_NAME = "Jai";
-const CANDIDATE_USERNAME = "jai01"; 
-const EXAM_DURATION = 600;
-const MAX_RESUMES = 2;
-
-const RAW_QUESTIONS = [
-  { id: 1, text: "Which of the following is a core characteristic of a pure function?", options: ["It modifies global state", "It always returns the same output for the same input", "It relies on external variables", "It execution depends on time"] },
-  { id: 2, text: "What hook would you use to optimize expensive computations in React?", options: ["useEffect", "useCallback", "useMemo", "useRef"] },
-  { id: 3, text: "Which HTTP status code represents an unauthorized client access attempt?", options: ["400 Bad Request", "401 Unauthorized", "403 Forbidden", "404 Not Found"] },
-  { id: 4, text: "What is the primary objective of salt hashing in database credential storage?", options: ["Data compression", "Defense against rainbow table attacks", "Bi-directional decryption", "Speeding up query runtimes"] },
-  { id: 5, text: "Which data structure operates on a Last-In, First-Out (LIFO) framework?", options: ["Queue", "Stack", "Binary Tree", "Linked List"] }
-];
+const EXAM_DURATION = 300;
+const MAX_RESUMES = 1;  
 
 const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
 export default function BitsAssessment() {
-  // --- STATE ---
-
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  // Safe User Parsing Helper
+  const getUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+      return null;
+    }
+  };
+  const user = getUser();
 
+  const CANDIDATE_NAME = user?.fullName|| "Unknown Candidate";
+  const CANDIDATE_USERNAME = user?.candidateId || "Unknown";
+
+  // --- STATE ---
+  const [loading, setLoading] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const [examFinished, setExamFinished] = useState(false); 
   const [questions, setQuestions] = useState([]);
@@ -33,6 +42,7 @@ export default function BitsAssessment() {
   const [statuses, setStatuses] = useState({});
   const [timeLeft, setTimeLeft] = useState(EXAM_DURATION);
   const [logs, setLogs] = useState([]);
+  const [isFullscreenViolated, setIsFullscreenViolated] = useState(false);
   
   const [fullscreenExits, setFullscreenExits] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
@@ -40,60 +50,109 @@ export default function BitsAssessment() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [resumeCount, setResumeCount] = useState(() => parseInt(localStorage.getItem("resume_count") || "0", 10));
 
+
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
 
-  // --- INITIAL COMPONENT REFRESH & PERSISTENCE HOOK ---
-  useEffect(() => {
-    const isRunning = localStorage.getItem("exam_running") === "true";
-    const savedQuestions = localStorage.getItem('exam_questions');
-    const savedAnswers = localStorage.getItem('exam_answers');
-    const savedStatuses = localStorage.getItem('exam_statuses');
-    const savedTime = localStorage.getItem('exam_time');
+  // --- ALL REFS (Eradicates stale closures in async intervals/listeners) ---
+  const questionsRef = useRef(questions);
+  const answersRef = useRef(answers);
+  const statusesRef = useRef(statuses);
+  const logsRef = useRef(logs);
+  const timeLeftRef = useRef(timeLeft);
+  const fullscreenExitsRef = useRef(fullscreenExits);
+  const tabSwitchesRef = useRef(tabSwitches);
+  const isBlurredRef = useRef(isBlurred);
+  const isOfflineRef = useRef(isOffline);
+  
+  const submittingRef = useRef(false);
+  const examStartedRef = useRef(false);
+  const examFinishedRef = useRef(false);
+  const isFullscreenRef = useRef(false);
+  const lastFullscreenExitTimeRef = useRef(0);
 
-    if (savedQuestions) {
-      setQuestions(JSON.parse(savedQuestions));
-    } else {
-      const randomized = shuffleArray(RAW_QUESTIONS).map(q => ({
-        ...q,
-        options: shuffleArray(q.options)
-      }));
-      setQuestions(randomized);
-      localStorage.setItem('exam_questions', JSON.stringify(randomized));
-    }
+  // Sync state values instantly to their respective refs
+  useEffect(() => { examStartedRef.current = examStarted; }, [examStarted]);
+  useEffect(() => { examFinishedRef.current = examFinished; }, [examFinished]);
+  useEffect(() => { questionsRef.current = questions; }, [questions]);
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { statusesRef.current = statuses; }, [statuses]);
+  useEffect(() => { logsRef.current = logs; }, [logs]);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+  useEffect(() => { fullscreenExitsRef.current = fullscreenExits; }, [fullscreenExits]);
+  useEffect(() => { tabSwitchesRef.current = tabSwitches; }, [tabSwitches]);
+  useEffect(() => { isBlurredRef.current = isBlurred; }, [isBlurred]);
+  useEffect(() => { isOfflineRef.current = isOffline; }, [isOffline]);
 
-    if (savedAnswers) setAnswers(JSON.parse(savedAnswers));
-    if (savedStatuses) setStatuses(JSON.parse(savedStatuses));
-    if (savedTime) setTimeLeft(parseInt(savedTime, 10));
+  // --- ROUTE PROTECTION ---
+  // useEffect(() => {
+  //   if (!hasSubmittedProfile()) {
+  //     navigate("/candidate/submission", { state: { next: "/candidate/bitsassessment" } });
+  //   }
+  // }, [navigate]);
 
-    if (isRunning) {
-      logEvent("Application refresh or unexpected crash recovery sequence triggered.");
-    }
-  }, []);
-
-
+  // --- INITIAL REFRESH & PERSISTENCE RESTORATION ---
 useEffect(() => {
-  if (!examStarted || examFinished) return;
+  const isRunning = localStorage.getItem("exam_running") === "true";
+  const savedQuestions = localStorage.getItem("exam_questions");
+  const savedAnswers = localStorage.getItem("exam_answers");
+  const savedStatuses = localStorage.getItem("exam_statuses");
+  const savedTime = localStorage.getItem("exam_time");
+  const savedFullscreenExits = localStorage.getItem("fullscreen_exits");
+  const savedTabSwitches = localStorage.getItem("tab_switches");
 
-  const restoreFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-  };
+  if (savedQuestions) {
+    setQuestions(JSON.parse(savedQuestions));
+  }
 
-  window.addEventListener("click", restoreFullscreen);
-  window.addEventListener("mousemove", restoreFullscreen);
-  window.addEventListener("keydown", restoreFullscreen);
+  if (savedAnswers) {
+    setAnswers(JSON.parse(savedAnswers));
+  }
 
-  return () => {
-    window.removeEventListener("click", restoreFullscreen);
-    window.removeEventListener("mousemove", restoreFullscreen);
-    window.removeEventListener("keydown", restoreFullscreen);
-  };
-}, [examStarted, examFinished]);
+  if (savedStatuses) {
+    setStatuses(JSON.parse(savedStatuses));
+  }
 
-  // --- AUTOMATIC WEBCAM ATTACHMENT ---
+  if (savedTime) {
+    setTimeLeft(parseInt(savedTime, 10));
+  }
+
+  if (savedFullscreenExits) {
+    setFullscreenExits(parseInt(savedFullscreenExits, 10));
+  }
+
+  if (savedTabSwitches) {
+    setTabSwitches(parseInt(savedTabSwitches, 10));
+  }
+
+  if (isRunning) {
+    logEvent("Application refresh or unexpected crash recovery sequence triggered.");
+  }
+}, []);
+
+  // --- STRICT FULLSCREEN LOCK GESTURES (Excluding mousemove) ---
+  useEffect(() => {
+    if (!examStarted || examFinished) return;
+
+    const restoreFullscreen = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    };
+
+    window.addEventListener("click", restoreFullscreen);
+window.addEventListener("keydown", restoreFullscreen);
+
+
+    return () => {
+      window.removeEventListener("click", restoreFullscreen);
+      window.removeEventListener("keydown", restoreFullscreen);
+    };
+  }, [examStarted, examFinished]);
+
+  // --- PROCTORING CAMERA STREAM ATTACHMENT ---
   useEffect(() => {
     if (examStarted && !examFinished) {
       initProctoring();
@@ -105,7 +164,7 @@ useEffect(() => {
     };
   }, [examStarted, examFinished]);
 
-  // --- UNIFIED COUNTDOWN TIMER EFFECT ---
+  // --- COUNTDOWN TIMER ---
   useEffect(() => {
     if (!examStarted || examFinished) return;
 
@@ -126,7 +185,7 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [examStarted, examFinished]);
 
-  // --- BACKGROUND AUTOMATIC PERIODIC BACKEND SAVING (Every 30 Seconds) ---
+  // --- BACKGROUND AUTO-SAVE (Runs every 30 seconds) ---
   useEffect(() => {
     if (!examStarted || examFinished) return;
 
@@ -136,9 +195,9 @@ useEffect(() => {
     }, 30000);
 
     return () => clearInterval(autoSaveInterval);
-  }, [examStarted, examFinished, answers, statuses, timeLeft, fullscreenExits, tabSwitches, logs]);
+  }, [examStarted, examFinished]);
 
-  // --- UNLOAD / REFRESH CAPTURE REGISTRATION ---
+  // --- UNLOAD / REFRESH INTERCEPTION ---
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (examStarted && !examFinished) {
@@ -149,7 +208,28 @@ useEffect(() => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [examStarted, examFinished]);
 
-  // --- STRICT BROWSER BACK BUTTON DISABLE ENGINE ---
+  // Ensure fullscreen after questions are loaded
+useEffect(() => {
+  if (!examStarted || examFinished || questions.length === 0) return;
+
+  const ensureFullscreen = async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+        logEvent("Fullscreen restored after question load.");
+      } catch (err) {
+        console.error("Unable to enter fullscreen:", err);
+      }
+    }
+  };
+
+  // Wait until the question is rendered
+  const timer = setTimeout(ensureFullscreen, 100);
+
+  return () => clearTimeout(timer);
+}, [questions, examStarted, examFinished]);
+
+  // --- BROWSER NAVIGATION BLOCKER ---
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
     const handlePopState = () => {
@@ -160,25 +240,31 @@ useEffect(() => {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // --- SECURITY LOG CONTROLLER ---
   const logEvent = (message) => {
     const timestamp = new Date().toISOString();
     const formattedLog = `[${timestamp}] ${message}`;
     setLogs(prev => [formattedLog, ...prev]);
   };
 
-  // --- DATA SYNC CONTROLLER ---
+  // --- SECURE DATA SYNCHRONIZATION ENGINE ---
   const sendExamData = async (videoBlob = null) => {
+    if (submittingRef.current && !videoBlob) return;
+
     try {
       const formData = new FormData();
-      formData.append("username", user.id);
-      formData.append("candidate", user.fullName);
-      formData.append("timeLeft", timeLeft);
-      formData.append("answers", JSON.stringify(answers));
-      formData.append("statuses", JSON.stringify(statuses));
-      formData.append("questions", JSON.stringify(questions));
-      formData.append("violations", JSON.stringify({ fullscreenExits, tabSwitches, isBlurred, isOffline }));
-      formData.append("logs", JSON.stringify(logs));
+      formData.append("username", user?.id || CANDIDATE_USERNAME);
+      formData.append("candidate", user?.fullName || CANDIDATE_NAME);
+      formData.append("timeLeft", timeLeftRef.current);
+      formData.append("answers", JSON.stringify(answersRef.current));
+      formData.append("statuses", JSON.stringify(statusesRef.current));
+      formData.append("questions", JSON.stringify(questionsRef.current));
+      formData.append("violations", JSON.stringify({ 
+        fullscreenExits: fullscreenExitsRef.current, 
+        tabSwitches: tabSwitchesRef.current, 
+        isBlurred: isBlurredRef.current, 
+        isOffline: isOfflineRef.current 
+      }));
+      formData.append("logs", JSON.stringify(logsRef.current));
       formData.append("systemInfo", JSON.stringify({
         browser: navigator.userAgent,
         language: navigator.language,
@@ -195,14 +281,11 @@ useEffect(() => {
         method: "POST",
         body: formData,
       });
-      alert("Bits exam Submitted Successfully");
-      navigate("/candidate");
     } catch (err) {
       console.error("Payload synchronization exception caught:", err);
     }
   };
- 
-  // --- PROCTORING HARDWARE INITIALIZATION ---
+   
   const initProctoring = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -236,7 +319,60 @@ useEffect(() => {
     }
   };
 
-  // --- ANTI-CHEAT SECURITY HOOK ---
+  // --- EXTRA SHIELD OVERLAY ACCESSIBLE HANDLERS ---
+const handleFullscreenChange = () => {
+  if (!examStartedRef.current || examFinishedRef.current) return;
+
+  const isCurrentlyFullscreen = !!document.fullscreenElement;
+
+  if (!isCurrentlyFullscreen) {
+    setFullscreenExits(prev => {
+      const next = prev + 1;
+
+      fullscreenExitsRef.current = next;
+      localStorage.setItem("fullscreen_exits", String(next));
+
+      logEvent(`SECURITY ALERT: Fullscreen exited (#${next})`);
+
+      if (next >= 3) {
+        autoSubmitExam("Maximum fullscreen exits exceeded.");
+      } else {
+        setIsFullscreenViolated(true);
+      }
+
+      return next;
+    });
+  }
+};
+
+  const handleActionFullscreenCapture = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreenViolated(false); 
+        logEvent("SYSTEM: Fullscreen restored via user action");
+      }
+    } catch (err) {
+      console.error("Failed to restore fullscreen:", err);
+    }
+  };
+
+  const handleReturnToFullscreen = async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreenViolated(false);
+      }
+    } catch (err) {
+      console.error("Failed to re-enter fullscreen:", err);
+      logEvent("ERROR: Failed to force fullscreen re-entry");
+    }
+  };
+
+  // --- ANTI-CHEAT SECURITY HOOKS ---
   useEffect(() => {
     if (!examStarted || examFinished) return;
 
@@ -252,47 +388,21 @@ useEffect(() => {
     };
 
     const handleVisibility = () => {
-      if (document.hidden) {
-        setTabSwitches(prev => {
-          const next = prev + 1;
-          logEvent(`SECURITY ALERT: Tab switch detected (#${next})`);
-          if (next >= 3) autoSubmitExam("Exceeded Max Tab Switch limit.");
-          return next;
-        });
-      }
-    };
-
-    const handleFullscreenChange = async () => {
-  // User exited fullscreen
-  if (!document.fullscreenElement && examStarted && !examFinished) {
-
-    setFullscreenExits(prev => {
+  if (document.hidden) {
+    setTabSwitches(prev => {
       const next = prev + 1;
 
-      logEvent(`Fullscreen exited (${next})`);
+      tabSwitchesRef.current = next;
+      localStorage.setItem("tab_switches", String(next));
+
+      logEvent(`SECURITY ALERT: Tab switch detected (#${next})`);
 
       if (next >= 3) {
-        autoSubmitExam("Maximum fullscreen exits exceeded.");
+        autoSubmitExam("Exceeded Max Tab Switch limit.");
       }
 
       return next;
     });
-
-    // Keep trying until fullscreen is restored
-    const retryFullscreen = () => {
-      if (document.fullscreenElement || examFinished) return;
-
-      document.documentElement.requestFullscreen()
-        .then(() => {
-          logEvent("Fullscreen restored automatically.");
-        })
-        .catch(() => {
-          // Retry every second
-          setTimeout(retryFullscreen, 1000);
-        });
-    };
-
-    retryFullscreen();
   }
 };
 
@@ -309,6 +419,8 @@ useEffect(() => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    isFullscreenRef.current = !!document.fullscreenElement;
+
     return () => {
       window.removeEventListener('keydown', preventMaliciousKeys);
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -320,94 +432,206 @@ useEffect(() => {
     };
   }, [examStarted, examFinished]);
 
-  // --- NAVIGATION & CONTROL FLOW MANAGEMENT ---
-  const startExam = async () => {
+  // --- API CALL FOR QUESTIONS ---
+  const fetchQuestions = async () => {
     try {
-      await document.documentElement.requestFullscreen();
-      setExamStarted(true);
-      localStorage.setItem("exam_running", "true");
-      logEvent("Exam engine initiated successfully.");
-    } catch (err) {
-      alert("Fullscreen execution activation context required to switch layout containers.");
+      setLoading(true);
+      const response = await axios.get(
+        "http://localhost:5000/api/candidate/getMcqQuestions"
+      );
+
+      const rawData = response.data?.data || response.data;
+      if (!Array.isArray(rawData)) {
+        throw new Error("Backend response format invalid. Expected an array inside 'data'.");
+      }
+
+      const formattedQuestions = rawData.map((q) => ({
+        id: q.id || Math.random().toString(36).substr(2, 9), 
+        text: q.question || q.text || "Missing question text", 
+        options: Array.isArray(q.options) ? q.options : [],
+        questionType: q.questionType || "mcq",
+        correctAnswers: q.correctAnswers || [],
+        difficulty: q.difficulty || "medium",
+        category: q.category || "React",
+        marks: q.marks || 1,
+      }));
+
+      return formattedQuestions;
+    } catch (error) {
+      console.error("Error inside fetchQuestions execution layer:", error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSelectOption = (option) => {
-    const currentQ = questions[currentIndex];
-    const updatedAnswers = { ...answers, [currentQ.id]: option };
-    setAnswers(updatedAnswers);
-    localStorage.setItem('exam_answers', JSON.stringify(updatedAnswers));
+const handleSelectOption = (option) => {
+  const currentQ = questions[currentIndex];
+  if (!currentQ) return;
 
-    if (statuses[currentQ.id] !== 'review') {
-      const updatedStatuses = { ...statuses, [currentQ.id]: 'answered' };
-      setStatuses(updatedStatuses);
-      localStorage.setItem('exam_statuses', JSON.stringify(updatedStatuses));
+  setAnswers((prev) => {
+    const updated = { ...prev };
+
+    if (currentQ.questionType === "MULTIPLE") {
+      const existing = updated[currentQ.id] || [];
+
+      if (existing.includes(option)) {
+        updated[currentQ.id] = existing.filter(o => o !== option);
+      } else {
+        updated[currentQ.id] = [...existing, option];
+      }
+    } else {
+      updated[currentQ.id] = option;
     }
-  };
+
+    answersRef.current = updated;
+    localStorage.setItem("exam_answers", JSON.stringify(updated));
+
+    return updated;
+  });
+
+  setStatuses((prev) => {
+    if (prev[currentQ.id] === "review") return prev;
+
+    const updated = {
+      ...prev,
+      [currentQ.id]: "answered"
+    };
+
+    statusesRef.current = updated;
+    localStorage.setItem("exam_statuses", JSON.stringify(updated));
+
+    return updated;
+  });
+};
+
 
   const markForReview = () => {
     const currentQ = questions[currentIndex];
-    const updatedStatuses = { ...statuses, [currentQ.id]: 'review' };
-    setStatuses(updatedStatuses);
-    localStorage.setItem('exam_statuses', JSON.stringify(updatedStatuses));
-    logEvent(`Question ID ${currentQ.id} marked for review layout flag.`);
+    if (!currentQ) return;
+
+    setStatuses((prev) => {
+      const updated = { ...prev, [currentQ.id]: "review" };
+      statusesRef.current = updated;
+      localStorage.setItem("exam_statuses", JSON.stringify(updated));
+      return updated;
+    });
+
+    logEvent(`Question ID ${currentQ.id} marked for review.`);
     navigateNext();
   };
 
   const clearResponse = () => {
     const currentQ = questions[currentIndex];
-    const updatedAnswers = { ...answers };
-    delete updatedAnswers[currentQ.id];
-    setAnswers(updatedAnswers);
-    localStorage.setItem('exam_answers', JSON.stringify(updatedAnswers));
+    if (!currentQ) return;
 
-    const updatedStatuses = { ...statuses, [currentQ.id]: 'visited' };
-    setStatuses(updatedStatuses);
-    localStorage.setItem('exam_statuses', JSON.stringify(updatedStatuses));
-    logEvent(`Cleared option selection response context for Question ID ${currentQ.id}.`);
+    setAnswers((prev) => {
+      const updated = { ...prev };
+      delete updated[currentQ.id];
+      answersRef.current = updated;
+      localStorage.setItem("exam_answers", JSON.stringify(updated));
+      return updated;
+    });
+
+    setStatuses((prev) => {
+      const updated = { ...prev, [currentQ.id]: "visited" };
+      statusesRef.current = updated;
+      localStorage.setItem("exam_statuses", JSON.stringify(updated));
+      return updated;
+    });
+
+    logEvent(`Cleared option response for Question ID ${currentQ.id}.`);
   };
 
   const navigatePrev = () => { if (currentIndex > 0) setCurrentIndex(prev => prev - 1); };
   const navigateNext = () => {
     const currentQ = questions[currentIndex];
+    if (!currentQ) return;
     if (!statuses[currentQ.id]) {
       setStatuses(prev => ({ ...prev, [currentQ.id]: 'visited' }));
     }
     if (currentIndex < questions.length - 1) setCurrentIndex(prev => prev + 1);
   };
 
-  const startNewExam = async () => {
-    localStorage.removeItem("exam_submitted");
-    localStorage.removeItem("resume_count");
-    localStorage.removeItem("exam_answers");
-    localStorage.removeItem("exam_statuses");
-    localStorage.removeItem("exam_questions");
-    localStorage.removeItem("exam_time");
-    localStorage.removeItem("exam_running");
+ const startNewExam = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Trigger Fullscreen IMMEDIATELY while the user gesture is still active
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen().catch((err) => {
+          console.warn("Fullscreen deferred or blocked initially:", err);
+        });
+      }
 
-    setTimeLeft(EXAM_DURATION);
-    setAnswers({});
-    setStatuses({});
-    setCurrentIndex(0);
-    setFullscreenExits(0);
-    setTabSwitches(0);
-    setLogs([]);
-    setExamFinished(false);
-    setResumeCount(0);
+      // 2. Now start your 7-second network request
+      const rawQuestions = await fetchQuestions();
 
-    localStorage.setItem("exam_time", String(EXAM_DURATION));
-    localStorage.setItem("exam_running", "true");
+      // 3. Clear out old exam states
+      localStorage.removeItem("exam_submitted");
+      localStorage.removeItem("resume_count");
+      localStorage.removeItem("exam_answers");
+      localStorage.removeItem("exam_statuses");
+      localStorage.removeItem("exam_questions");
+      localStorage.removeItem("exam_time");
+      localStorage.removeItem("exam_running");
+      localStorage.removeItem("fullscreen_exits");
+      localStorage.removeItem("tab_switches");
 
-    const randomized = shuffleArray(RAW_QUESTIONS).map(q => ({
+      setTimeLeft(EXAM_DURATION);
+      setAnswers({});
+      setStatuses({});
+      setCurrentIndex(0);
+      setFullscreenExits(0);
+      setTabSwitches(0);
+      setLogs([]);
+      setExamFinished(false);
+      setResumeCount(0);
+      fullscreenExitsRef.current = 0;
+      tabSwitchesRef.current = 0;
+
+      setFullscreenExits(0);
+      setTabSwitches(0);
+
+      localStorage.setItem("exam_time", String(EXAM_DURATION));
+      localStorage.setItem("exam_running", "true");
+
+      const randomized = shuffleArray(rawQuestions).map((q) => ({
         ...q,
         options: shuffleArray(q.options),
-    }));
-    setQuestions(randomized);
-    localStorage.setItem("exam_questions", JSON.stringify(randomized));
+      }));
 
-    await document.documentElement.requestFullscreen();
-    setExamStarted(true);
-    logEvent("Brand new operational exam profile generated.");
+      
+      setQuestions(randomized);
+localStorage.setItem("exam_questions", JSON.stringify(randomized));
+
+setExamStarted(true);
+
+// Wait for React to render the exam screen, then ensure fullscreen
+setTimeout(async () => {
+  if (!document.fullscreenElement) {
+    try {
+      await document.documentElement.requestFullscreen();
+      logEvent("Fullscreen restored after questions loaded.");
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}, 0);
+
+logEvent("Brand new operational exam profile generated.");
+
+    } catch (error) {
+      console.error(error);
+      alert("Unable to load exam questions. Please verify connection to server.");
+      
+      // Exit fullscreen if the network or preparation fails
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resumeExam = async () => {
@@ -416,11 +640,10 @@ useEffect(() => {
       return;
     }
 
-    const count = resumeCount + 1;
+    const count = resumeCount;
     localStorage.setItem("resume_count", String(count));
     setResumeCount(count);
 
-    // Reload persisted runtime operational values securely inside memory states
     const savedAnswers = JSON.parse(localStorage.getItem("exam_answers") || "{}");
     const savedStatuses = JSON.parse(localStorage.getItem("exam_statuses") || "{}");
     const savedQuestions = JSON.parse(localStorage.getItem("exam_questions") || "[]");
@@ -433,36 +656,26 @@ useEffect(() => {
 
     localStorage.setItem("exam_running", "true");
 
-    await document.documentElement.requestFullscreen();
+    await document.documentElement.requestFullscreen().catch(() => {});
     setExamStarted(true);
-    logEvent(`Exam layout structure resumed. Interception attempt tracking counter incremented to: ${count}`);
+    logEvent(`Exam session resumed. Attempt count: ${count}`);
   };
 
   const submitExamRequest = () => {
-    const total = questions.length;
-    const answeredCount = Object.keys(answers).length;
-    const reviewCount = Object.values(statuses).filter(s => s === 'review').length;
-    
-    // const confirmation = window.confirm(
-    //   `Confirm Submit:\n\n` +
-    //   `Total Questions: ${total}\n` +
-    //   `Answered: ${answeredCount}\n` +
-    //   `Marked for Review: ${reviewCount}\n` +
-    //   `Unanswered: ${total - answeredCount}\n\n` +
-    //   `Are you sure you want to finish and submit?`
-    // );
-
-    // if (confirmation) 
-      autoSubmitExam("User submission.");
+    autoSubmitExam("User submission.");
   };
 
   const autoSubmitExam = async (reason) => {
-    // Prevent duplicate processing collisions
-    if (examFinished) return;
+    if (submittingRef.current) return;
+
+    submittingRef.current = true;
+    setExamFinished(true);
 
     logEvent(`Exam ending submission workflow instantiated: ${reason}`);
     localStorage.setItem("exam_submitted", "true");
     localStorage.removeItem("exam_running");
+    localStorage.removeItem("fullscreen_exits");
+    localStorage.removeItem("tab_switches");
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
@@ -478,6 +691,7 @@ useEffect(() => {
     }
 
     if (document.fullscreenElement) {
+      examFinishedRef.current = true;
       document.exitFullscreen().catch(() => {});
     }
 
@@ -487,78 +701,77 @@ useEffect(() => {
     localStorage.removeItem("exam_time");
     localStorage.removeItem("resume_count");
 
-    setExamFinished(true);
-    if(reason!=="User submission.")
-    alert(`Exam finished context recorded.\nReason data: ${reason}`);
-  };
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    user.bitsExamStatus = "Process";
+    localStorage.setItem("user", JSON.stringify(user));
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    alert(`Exam finished. Result: ${reason}`);
+    navigate("/candidate");
   };
 
   if (examFinished) {
     const totalQs = questions.length;
     const answeredQs = Object.keys(answers).length;
     return (
-      <div style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '600px', margin: '40px auto', border: '1px solid #c3e6cb', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', background: '#f8fff9' }}>
-        <h2 style={{ color: '#28a745', marginBottom: '20px' }}>✓ Exam Submitted Successfully</h2>
-        <div style={{ borderBottom: '1px solid #ddd', paddingBottom: '20px', marginBottom: '20px' }}>
+      <div style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '600px', margin: '40px auto', border: '1px solid #a3b18a', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', background: '#f2f7ee' }}>
+        <h2 style={{ color: '#588157', marginBottom: '20px' }}>✓ Exam Submitted Successfully</h2>
+        <div style={{ borderBottom: '1px solid #a3b18a', paddingBottom: '20px', marginBottom: '20px' }}>
           <p>Candidate: <strong>{CANDIDATE_NAME}</strong></p>
-          <p>Username context record ID: <code>{CANDIDATE_USERNAME}</code></p>
+          <p>Username: <code>{CANDIDATE_USERNAME}</code></p>
         </div>
-        <h4 style={{ color: '#495057' }}>Submission Metrics Summary</h4>
-        <div style={{ display: 'flex', justifyContent: 'space-around', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e9ecef', margin: '20px 0' }}>
-          <div><strong>{totalQs}</strong><br/><small style={{color:'#6c757d'}}>Total Tasks</small></div>
-          <div><strong>{answeredQs}</strong><br/><small style={{color:'#6c757d'}}>Answered</small></div>
-          <div><strong>{totalQs - answeredQs}</strong><br/><small style={{color:'#6c757d'}}>Skipped</small></div>
+        <h4 style={{ color: '#2b3a2e' }}>Submission Summary</h4>
+        <div style={{ display: 'flex', justifyContent: 'space-around', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #a3b18a', margin: '20px 0' }}>
+          <div><strong>{totalQs}</strong><br/><small style={{color:'#9a9a8f'}}>Total Tasks</small></div>
+          <div><strong>{answeredQs}</strong><br/><small style={{color:'#9a9a8f'}}>Answered</small></div>
+          <div><strong>{totalQs - answeredQs}</strong><br/><small style={{color:'#9a9a8f'}}>Skipped</small></div>
         </div>
-        <p style={{ fontSize: '14px', color: '#6c757d' }}>Your biometric tracks, responses, and security behavior telemetry log profiles are completely synchronized.</p>
-        <p style={{ fontWeight: 'bold', color: '#495057', marginTop: '30px' }}>You may now safely close this browser portal window.</p>
+        <p style={{ fontSize: '14px', color: '#9a9a8f' }}>Your biometric data, response profile, and security logs are fully synchronized.</p>
       </div>
     );
   }
 
-  // --- WELCOME & RESUME ENTRY DETECTION SCREEN ---
-  if (!examStarted) {
+if (!examStarted) {
     const hasExamData = localStorage.getItem("exam_time") && localStorage.getItem("exam_questions");
     const submittedData = localStorage.getItem("exam_submitted") === "true";
 
     return (
-      <div style={{ padding: 30, maxWidth: 700, margin: "60px auto", border: "1px solid #ddd", borderRadius: 10, textAlign: "center", boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+      <div style={{ padding: 30, maxWidth: 700, margin: "60px auto", border: "1px solid #a3b18a", borderRadius: 10, textAlign: "center", boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <h2>Secure Examination Environment</h2>
         <h3>{CANDIDATE_NAME}</h3>
-        <p style={{ color: '#dc3545', fontSize: '14px' }}>
-          Warning: Professional anti-cheat logs, tab execution hooks, and camera tracking sync autonomously upon launch container entry.
+        <p style={{ color: '#bc4749', fontSize: '14px' }}>
+          Warning: Professional anti-cheat logs, tab tracking, and hardware camera monitoring sync automatically.
         </p>
 
-        {submittedData ? (
+        {loading ? (
+          <div style={{ padding: "14px 35px", fontSize: 16, fontWeight: 'bold', color: '#3a5a40' }}>
+            Loading Questions...
+          </div>
+        ) : submittedData ? (
           <>
-            <div style={{ background: "#d4edda", color: "#155724", padding: 15, borderRadius: 5, marginBottom: 20 }}>
-              ✅ Previous structural exam layout data has already been fully processed and locked.
+            <div style={{ background: "#e6efe1", color: "#335c39", padding: 15, borderRadius: 5, marginBottom: 20 }}>
+              ✅ Previous assessment layout data has already been fully processed and locked.
             </div>
-            <button onClick={startNewExam} style={{ padding: "12px 25px", fontSize: 16, cursor: "pointer", background: '#007bff', color:'#fff', border:'none', borderRadius:'5px' }}>
+            <button onClick={startNewExam} style={{ padding: "12px 25px", fontSize: 16, cursor: "pointer", background: '#3a5a40', color:'#fff', border:'none', borderRadius:'5px' }}>
               Start New Exam
             </button>
           </>
         ) : hasExamData ? (
           <>
-            <div style={{ background: "#fff3cd", color: "#856404", padding: 15, borderRadius: 5, marginBottom: 20, textAlign: 'left' }}>
+            <div style={{ background: "#f5e6cf", color: "#8a5a1f", padding: 15, borderRadius: 5, marginBottom: 20, textAlign: 'left' }}>
               <strong>Previous active exam state detected.</strong>
               <br /><br />
               Authorized Recovered Attempts remaining: <strong>{resumeCount} / {MAX_RESUMES}</strong>
             </div>
-            <button onClick={resumeExam} disabled={resumeCount >= MAX_RESUMES} style={{ padding: "12px 25px", marginRight: 15, cursor: resumeCount >= MAX_RESUMES ? "not-allowed" : "pointer", background: '#28a745', color:'#fff', border:'none', borderRadius:'5px' }}>
+            <button onClick={resumeExam} disabled={resumeCount >= MAX_RESUMES} style={{ padding: "12px 25px", marginRight: 15, cursor: resumeCount >= MAX_RESUMES ? "not-allowed" : "pointer", background: '#588157', color:'#fff', border:'none', borderRadius:'5px' }}>
               Resume Active Session
             </button>
-            <button onClick={startNewExam} style={{ padding: "12px 25px", cursor: "pointer", background: '#dc3545', color:'#fff', border:'none', borderRadius:'5px' }}>
+            <button onClick={startNewExam} style={{ padding: "12px 25px", cursor: "pointer", background: '#bc4749', color:'#fff', border:'none', borderRadius:'5px' }}>
               Overwrite & Start New
             </button>
           </>
         ) : (
-          <button onClick={startNewExam} style={{ padding: "14px 35px", fontSize: 16, cursor: "pointer", background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}>
-            Start Exam Container
+          <button onClick={startNewExam} style={{ padding: "14px 35px", fontSize: 16, cursor: "pointer", background: '#3a5a40', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}>
+            Start Exam
           </button>
         )}
       </div>
@@ -571,145 +784,119 @@ useEffect(() => {
   const answeredCount = Object.keys(answers).length;
   const markedCount = Object.values(statuses).filter(s => s === 'review').length;
 
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
   return (
-    <div style={{ padding: '20px', position: 'relative', minHeight: '100vh' }}>
-      
-      {/* FLOATING FLOOD LAYER CONTINUOUS PROFESSIONAL WATERMARK */}
+    <div className="app-shell" style={{ position: "relative" }}>
+      {/* watermark overlay */}
       <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 9999,
-        opacity: 0.04,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        fontSize: '28px',
-        fontWeight: 'bold',
-        color: '#000',
-        userSelect: 'none'
+        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+        pointerEvents: 'none', zIndex: 9999, opacity: 0.04, display: 'flex',
+        flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center',
+        fontSize: '28px', fontWeight: 'bold', color: '#000', userSelect: 'none'
       }}>
         <div>{CANDIDATE_NAME} • {CANDIDATE_USERNAME}</div>
         <div>SECURE EXAM CONTEXT • {CANDIDATE_NAME}</div>
         <div>{CANDIDATE_USERNAME} • WORKFLOW RUNNING</div>
       </div>
 
-      {isBlurred && (
-        <div style={{ background: '#fff3cd', borderLeft: '6px solid #ffc107', color: '#856404', padding: '15px', margin: '0 0 20px 0', borderRadius: '4px' }}>
-          <h3>⚠️ WARNING: Context Layout Focus Window Broken!</h3>
-          <p>Please click inside this layout window element context instantly. Continued focus escapes initiate instant auto-termination submit commands.</p>
+      <header className="app-header">
+        <div className="app-title">
+          Exam Terminal Dashboard
+          {isOffline && (
+            <span style={{ marginLeft: 10, background: "#bc4749", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              OFFLINE
+            </span>
+          )}
         </div>
-      )}
-
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eaeaea', paddingBottom: '15px', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Exam Terminal Dashboard</h2>
-          {isOffline && <span style={{ background: '#dc3545', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>[OFFLINE NETWORK DISCONNECTED MODE]</span>}
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <h3 style={{ margin: 0, color: timeLeft < 60 ? '#dc3545' : '#333' }}>Time Remaining: {formatTime(timeLeft)}</h3>
+        <div className={`app-timer ${timeLeft < 60 ? "app-timer--low" : ""}`}>
+          <span className="app-timer-label">Time left</span>
+          <span className="app-timer-value">
+            {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+          </span>
         </div>
       </header>
 
-      <div style={{ display: 'flex', gap: '20px' }}>
-        <section style={{ flex: 1 }}>
-          <div style={{ border: '1px solid #ccc', padding: '20px', marginBottom: '20px', borderRadius: '8px', background: '#fff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6c757d', marginBottom: '15px' }}>
-              <span>Question <strong>{currentIndex + 1}</strong> of {questions.length}</span>
-              <span style={{ textTransform: 'uppercase', fontSize: '12px', fontWeight: 'bold', background: '#e9ecef', padding: '3px 8px', borderRadius: '4px' }}>
-                Status: {statuses[currentQuestion.id] || 'unvisited'}
-              </span>
-            </div>
-            <p style={{ fontWeight: 'bold', fontSize: '18px', marginTop: 0 }}>{currentQuestion.text}</p>
-
-            <div style={{ marginTop: '20px' }}>
-              {currentQuestion.options.map((opt, i) => (
-                <label key={i} style={{ display: 'block', margin: '12px 0', padding: '12px', border: '1px solid #e9ecef', borderRadius: '6px', cursor: 'pointer', background: answers[currentQuestion.id] === opt ? '#f0f4f8' : '#fff', transition: 'background 0.2s' }}>
-                  <input 
-                    type="radio" 
-                    name={`q-${currentQuestion.id}`} 
-                    checked={answers[currentQuestion.id] === opt}
-                    onChange={() => handleSelectOption(opt)}
-                    style={{ marginRight: '10px' }}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
+      {/* If timer is running and they exited fullscreen, intercept their next action */}
+      {isFullscreenViolated && (
+        <div 
+          onClickCapture={handleActionFullscreenCapture}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 99999,
+            pointerEvents: 'auto',
+            cursor: 'pointer',
+            boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.6)', 
+            backgroundColor: 'transparent',
+            userSelect: 'none'
+          }}
+        >
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            fontFamily: 'sans-serif',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }}>
+            Click anywhere (or your next button) to restore Fullscreen and continue
           </div>
+        </div>
+      )}
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button disabled={currentIndex === 0} onClick={navigatePrev} style={{ padding: '10px 20px', cursor: 'pointer' }}>Previous</button>
-            <button onClick={markForReview} style={{ padding: '10px 20px', cursor: 'pointer', background: '#ffc107', border: 'none', borderRadius: '4px' }}>Mark for Review</button>
-            <button onClick={clearResponse} style={{ padding: '10px 20px', cursor: 'pointer', background: '#e9ecef', border: 'none', borderRadius: '4px' }}>Clear Response</button>
-            <button onClick={currentIndex === questions.length - 1 ? submitExamRequest : navigateNext} style={{ padding: '10px 25px', cursor: 'pointer', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', marginLeft: 'auto', fontWeight: 'bold' }}>
-              {currentIndex === questions.length - 1 ? "Submit Exam" : "Next Question"}
-            </button>
-          </div>
-        </section>
+      {isBlurred && (
+        <div className="app-banner" style={{ marginTop: 16 }}>
+          ⚠️ Focus lost — click back inside the exam window. Repeated escapes will auto-submit.
+        </div>
+      )}
 
-        <aside style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', background: '#fff' }}>
-            <h5 style={{ margin: '0 0 10px 0' }}>Biometric Stream Capture Feed</h5>
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              muted 
-              playsInline 
-              style={{ width: "100%", borderRadius: "6px", backgroundColor: "#000", transform: 'scaleX(-1)' }} 
-            />
-          </div>
+      <main className="app-main">
+        {currentQuestion && (
+          <QuestionPanel
+            question={currentQuestion}
+            index={currentIndex}
+            total={questions.length}
+            statusLabel={statuses[currentQuestion.id] || "unvisited"}
+            selectedOption={answers[currentQuestion.id]}
+            onSelectOption={handleSelectOption}
+            onPrev={navigatePrev}
+            onNext={navigateNext}
+            onMarkForReview={markForReview}
+            onClearResponse={clearResponse}
+            onSubmit={submitExamRequest}
+            isFirst={currentIndex === 0}
+            isLast={currentIndex === questions.length - 1}
+          />
+        )}
 
-          <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', background: '#fff' }}>
-            <h5 style={{ margin: '0 0 10px 0' }}>Question Grid Palette</h5>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {questions.map((q, idx) => {
-                let btnBg = '#fff';
-                let btnColor = '#000';
-                if (statuses[q.id] === 'answered') { btnBg = '#28a745'; btnColor = '#fff'; }
-                if (statuses[q.id] === 'review') { btnBg = '#ffc107'; btnColor = '#000'; }
-
-                return (
-                  <button 
-                    key={q.id} 
-                    onClick={() => setCurrentIndex(idx)}
-                    style={{
-                      fontWeight: idx === currentIndex ? 'bold' : 'normal',
-                      border: idx === currentIndex ? '2px solid #000' : '1px solid #ced4da',
-                      padding: '8px 12px',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      background: btnBg,
-                      color: btnColor,
-                      minWidth: '40px'
-                    }}
-                  >
-                    {idx + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', background: '#fff', fontSize: '14px' }}>
-            <h5 style={{ margin: '0 0 10px 0' }}>Statistical Telemetry</h5>
-            <p style={{ margin: '5px 0' }}>Answered Tasks: <strong>{answeredCount}</strong></p>
-            <p style={{ margin: '5px 0' }}>Marked Review Layers: <strong>{markedCount}</strong></p>
-            <p style={{ margin: '5px 0' }}>Remaining Elements: <strong>{questions.length - answeredCount}</strong></p>
-            <p style={{ color: (tabSwitches > 0 || fullscreenExits > 0) ? '#dc3545' : '#28a745', fontWeight: 'bold', margin: '10px 0 0 0' }}>
-              Violations Logged: Tabs ({tabSwitches}/3) | Fullscreen Escapes ({fullscreenExits}/3)
-            </p>
-          </div>
-
-          <button onClick={submitExamRequest} style={{ padding: '14px', background: '#28a745', color: 'white', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '6px', fontSize: '15px', boxShadow: '0 2px 6px rgba(40,167,69,0.3)' }}>
-            Submit Final Responses
-          </button>
+        <aside className="app-sidebar">
+          <CamWindow videoRef={videoRef} />
+          <QuestionGrid
+            questions={questions}
+            statuses={statuses}
+            currentIndex={currentIndex}
+            onSelect={setCurrentIndex}
+          />
+          <SecurityPanel
+            answeredCount={answeredCount}
+            markedCount={markedCount}
+            total={questions.length}
+            tabSwitches={tabSwitches}
+            fullscreenExits={fullscreenExits}
+          />
         </aside>
-      </div>
+      </main>
     </div>
   );
-}
+} 

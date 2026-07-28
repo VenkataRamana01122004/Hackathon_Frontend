@@ -1,78 +1,45 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const originalQuestions = [
-  {
-    id: 1, // Added explicit ID for structural mapping
-    title: "Sum of Two Integers",
-    description: "Write a program to print the sum of two integers.",
-    input: "Two integers",
-    output: "Print their sum.",
-    sampleInput: "5 10",
-    sampleOutput: "15",
-    constraints: "1 ≤ N ≤ 10⁹",
-    starterCode: {
-      java: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n\n    }\n}`,
-      c: `#include<stdio.h>\n\nint main() {\n\n    return 0;\n}`,
-      python: `a, b = map(int, input().split())\nprint(a + b)`
-    }
-  },
-  {
-    id: 2, // Added explicit ID for structural mapping
-    title: "Largest of Three Numbers",
-    description: "Write a program to print the largest among three integers.",
-    input: "Three integers",
-    output: "Print the largest integer.",
-    sampleInput: "10 25 8",
-    sampleOutput: "25",
-    constraints: "-10⁹ ≤ N ≤ 10⁹",
-    starterCode: {
-      java: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n\n    }\n}`,
-      c: `#include<stdio.h>\n\nint main() {\n\n    return 0;\n}`,
-      python: `a = int(input())\n# Complete code`
-    }
-  },
-  {
-    id: 3, // Added explicit ID for structural mapping
-    title: "Reverse a String",
-    description: "Write a program to reverse a given string.",
-    input: "A single string",
-    output: "Reversed string",
-    sampleInput: "hello",
-    sampleOutput: "olleh",
-    constraints: "Length ≤ 1000",
-    starterCode: {
-      java: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n\n    }\n}`,
-      c: `#include<stdio.h>\n\nint main() {\n\n    return 0;\n}`,
-      python: `s = input()\nprint(s[::-1])`
-    }
-  }
-];
-
-const shuffleArray = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
+import ProblemPanel from "./coding/ProblemPanel.jsx";
+import DraggableCamWindow from "./coding/DraggableCamWindow.jsx";
+import { getProgress, getRoundLocks, recordCodingResult } from "./utils/progress.js";
+import "./candidate.css";
 
 const ASSIGNMENT_DURATION_SECONDS = 300; 
+const MAX_RESUMES = 2;
 
 function AssignmentPanel() {
-  // --- STATE ---
-
   const navigate = useNavigate();
   
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || { id: "unknown", fullName: "Anonymous Candidate" };
+    } catch (e) {
+      return { id: "unknown", fullName: "Anonymous Candidate" };
+    }
+  }, []);
 
+
+  const [hasPreviousAssignment, setHasPreviousAssignment] = useState(() => {
+    return localStorage.getItem("assignment_running") === "true";
+  });
+  const [isSubmitted, setIsSubmitted] = useState(() => {
+    return localStorage.getItem("assignment_submitted") === "true";
+  });
+  const [resumeCount, setResumeCount] = useState(() => {
+    return parseInt(localStorage.getItem("assignment_resume_count") || "0", 10);
+  });
+
+  const [isFullscreenViolated, setIsFullscreenViolated] = useState(false);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [questions, setQuestions] = useState([]);
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(ASSIGNMENT_DURATION_SECONDS);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [language, setLanguage] = useState("java");
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("assignment_language") || "java";
+  });
   const [code, setCode] = useState("");
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
@@ -82,9 +49,12 @@ function AssignmentPanel() {
 
   const submittedRef = useRef(false);
   const assignmentStartRef = useRef(null);
-  const tabSwitchCountRef = useRef(0);
-  const blurCountRef = useRef(0);
-  const fullscreenExitCountRef = useRef(0);
+
+  // Persistent proctoring counters loaded directly from localStorage to handle refreshes
+  const tabSwitchCountRef = useRef(parseInt(localStorage.getItem("assignment_tab_switches") || "0", 10));
+  const blurCountRef = useRef(parseInt(localStorage.getItem("assignment_blur_events") || "0", 10));
+  const fullscreenExitCountRef = useRef(parseInt(localStorage.getItem("assignment_fullscreen_exits") || "0", 10));
+
   const keyboardLogsRef = useRef([]);
   const mouseClickCountRef = useRef(0);
   const mouseMoveCountRef = useRef(0);
@@ -95,18 +65,26 @@ function AssignmentPanel() {
   const blockedShortcutAttemptsRef = useRef(0);
   const idleTimeSecondsRef = useRef(0);
   const lastActivityTimeRef = useRef(Date.now());
-  const ignoreNextFullscreenExitRef = useRef(false);
 
-  // Media Capture Refs
+  const languageRef = useRef(language);
+  const codeRef = useRef(code);
+  const questionIndexRef = useRef(questionIndex);
+  const questionsRef = useRef([]);
+
+  useEffect(() => { languageRef.current = language; }, [language]);
+  useEffect(() => { codeRef.current = code; }, [code]);
+  useEffect(() => { questionIndexRef.current = questionIndex; }, [questionIndex]);
+  useEffect(() => { questionsRef.current = questions; }, [questions]);
+
   const mediaStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const videoPreviewRef = useRef(null);
 
   const [metrics, setMetrics] = useState({
-    tabSwitches: 0,
-    blurEvents: 0,
-    fullscreenExits: 0,
+    tabSwitches: tabSwitchCountRef.current,
+    blurEvents: blurCountRef.current,
+    fullscreenExits: fullscreenExitCountRef.current,
     copyAttempts: 0,
     cutAttempts: 0,
     pasteAttempts: 0,
@@ -120,11 +98,39 @@ function AssignmentPanel() {
 
   const currentQuestion = questions[questionIndex];
 
-  // Initialize and Shuffle Questions once
+  // Load Questions
   useEffect(() => {
-    const randomized = shuffleArray(originalQuestions);
-    setQuestions(randomized);
-    
+    const loadQuestions = async () => {
+      setLoadingQuestions(true);
+      try {
+        const cachedQuestions = localStorage.getItem("assignment_questions");
+        if (cachedQuestions) {
+          const parsed = JSON.parse(cachedQuestions);
+          if (parsed && parsed.length > 0) {
+            setQuestions(parsed);
+            questionsRef.current = parsed;
+            setLoadingQuestions(false);
+            return;
+          }
+        }
+
+        const res = await axios.get("http://localhost:5000/api/candidate/getquestions");
+        const questionList = res.data.data || res.data || [];
+
+        localStorage.setItem("assignment_questions", JSON.stringify(questionList));
+
+        setQuestions(questionList);
+        questionsRef.current = questionList;
+      } catch (err) {
+        console.error("Failed to load coding questions:", err);
+        alert("Unable to load coding questions.");
+      } finally {
+        setLoadingQuestions(false);
+      }
+    };
+
+    loadQuestions();
+
     setSystemInfo({
       userAgent: navigator.userAgent,
       language: navigator.language,
@@ -134,7 +140,14 @@ function AssignmentPanel() {
     });
   }, []);
 
-  // Handle starter code loading & LocalStorage state recovery
+  // Update question Index tracking in storage
+  useEffect(() => {
+    if (started) {
+      localStorage.setItem("assignment_question", questionIndex);
+    }
+  }, [questionIndex, started]);
+
+  // Load saved code on question/language change
   useEffect(() => {
     if (questions.length === 0) return;
 
@@ -142,16 +155,16 @@ function AssignmentPanel() {
     if (savedCode) {
       setCode(savedCode);
     } else {
-      setCode(questions[questionIndex]?.starterCode[language] || "");
+      setCode(questions[questionIndex]?.starterCode?.[language] || "");
     }
   }, [questionIndex, language, questions]);
 
-  // Background Auto-Save to LocalStorage on keystroke change
+  // Save code dynamically
   useEffect(() => {
     if (started && currentQuestion) {
       localStorage.setItem(`saved_code_q_${questionIndex}_${language}`, code);
     }
-  }, [code, started, questionIndex, language]);
+  }, [code, started, questionIndex, language, currentQuestion]);
 
   const syncMetrics = () => {
     setMetrics({
@@ -163,14 +176,13 @@ function AssignmentPanel() {
       pasteAttempts: pasteAttemptsRef.current,
       rightClicks: rightClickAttemptsRef.current,
       mouseClicks: mouseClickCountRef.current,
-      mouseMoveCount: mouseMoveCountRef.current,
+      mouseMoves: mouseMoveCountRef.current,
       keyPresses: keyboardLogsRef.current.length,
       blockedShortcuts: blockedShortcutAttemptsRef.current,
       idleTime: idleTimeSecondsRef.current
     });
   };
 
-  // --- MEDIA RECORDING CORE ---
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -213,7 +225,6 @@ function AssignmentPanel() {
     });
   };
 
-  // --- ASSIGNMENT SUBMISSION ---
   const submitCode = async (reason = "manual") => {
     if (submittedRef.current || submitting) return;
     submittedRef.current = true;
@@ -224,24 +235,19 @@ function AssignmentPanel() {
         await document.exitFullscreen();
       }
 
-      // Stop recording and retrieve binary video evidence
       const videoBlob = await stopRecordingAndGetBlob();
 
-      // Compile ALL compilation answers written by candidate from LocalStorage
-      const answersPayload = questions.map((q, idx) => {
-        // Fallback checks across all languages if the user worked on alternative sets
-        const activeLang = idx === questionIndex ? language : "java"; 
+      const answersPayload = questionsRef.current.map((q, idx) => {
         const cachedJava = localStorage.getItem(`saved_code_q_${idx}_java`);
         const cachedC = localStorage.getItem(`saved_code_q_${idx}_c`);
         const cachedPython = localStorage.getItem(`saved_code_q_${idx}_python`);
 
-        // Check which language has text stored, fallback to original runtime context
         let chosenLanguage = "java";
-        let finalCode = q.starterCode["java"];
+        let finalCode = q.starterCode?.["java"] || "";
 
-        if (idx === questionIndex) {
-          chosenLanguage = language;
-          finalCode = code;
+        if (idx === questionIndexRef.current) {
+          chosenLanguage = languageRef.current;
+          finalCode = codeRef.current;
         } else if (cachedPython) {
           chosenLanguage = "python";
           finalCode = cachedPython;
@@ -253,22 +259,24 @@ function AssignmentPanel() {
           finalCode = cachedJava;
         }
 
-       return {
+        return {
           questionId: q.id,
           title: q.title,
           description: q.description,
           language: chosenLanguage,
           code: finalCode
-      };
+        };
       });
 
+      const startTime = assignmentStartRef.current || new Date().toISOString();
+
       const payload = {
-        username:user.id,
-        candidate:user.fullName,
-        answers: answersPayload, // Added comprehensive structured array matching criteria
-        assignmentStartTime: assignmentStartRef.current,
+        username: user.id,
+        candidate: user.fullName,
+        answers: answersPayload,
+        assignmentStartTime: startTime,
         assignmentEndTime: new Date().toISOString(),
-        totalTime: Date.now() - new Date(assignmentStartRef.current).getTime(),
+        totalTime: Date.now() - new Date(startTime).getTime(),
         submitReason: reason,
         timerExpired: reason === "timeout",
         candidateSystemInfo: systemInfo,
@@ -289,14 +297,11 @@ function AssignmentPanel() {
         }
       };
 
-      // Construct Multi-part FormData for payload processing + direct video upload
       const formData = new FormData();
       formData.append("metadata", JSON.stringify(payload));
       if (videoBlob) {
         formData.append("evidenceVideo", videoBlob, "exam_recording.webm");
       }
-
-      console.log("Submitting Final Compiled Answers Data Payload & Video Evidence...");
 
       await axios.post(
         "http://localhost:5000/api/interview/submitAssignment",
@@ -304,11 +309,39 @@ function AssignmentPanel() {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      localStorage.clear();
+      recordCodingResult({ attempted: 1, total: 1 });
+      
+      // Target specific local keys to clean instead of clear()
+      localStorage.removeItem("assignment_running");
+      localStorage.removeItem("assignment_end_time");
+      localStorage.removeItem("assignment_question");
+      localStorage.removeItem("assignment_resume_count");
+      localStorage.removeItem("assignment_start");
+      localStorage.removeItem("assignment_language");
+      localStorage.removeItem("assignment_questions");
+      localStorage.removeItem("assignment_tab_switches");
+      localStorage.removeItem("assignment_blur_events");
+      localStorage.removeItem("assignment_fullscreen_exits");
+      localStorage.setItem("assignment_submitted", "true");
+
+      setHasPreviousAssignment(false);
+      setIsSubmitted(true);
+
+      // Safely delete all question codes from storage
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("saved_code_q_")) {
+          localStorage.removeItem(key);
+        }
+      });
 
       if (reason === "tab") alert("Exam auto-submitted due to excessive proctoring violations.");
       else if (reason === "timeout") alert("Time limit reached! System auto-submitted your work.");
+      else if (reason === "resume_limit") alert("Exam ended because the resume limit was exceeded.");
       else alert("Assignment Submitted Successfully.");
+
+      const updatedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      updatedUser.codingExamStatus = "Process";
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
       navigate("/candidate", { replace: true });
       
@@ -321,60 +354,52 @@ function AssignmentPanel() {
     }
   };
 
-  // --- FULLSCREEN MANAGEMENT ---
+  const handleFullscreenChange = () => {
+    if (!started || submittedRef.current) return;
+
+    if (!document.fullscreenElement) {
+      fullscreenExitCountRef.current++;
+      localStorage.setItem("assignment_fullscreen_exits", fullscreenExitCountRef.current);
+      syncMetrics();
+
+      if (fullscreenExitCountRef.current >= 3) {
+        submitCode("fullscreen");
+        return;
+      }
+
+      setIsFullscreenViolated(true);
+    }
+  };
+
+  const handleActionFullscreenCapture = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      await document.documentElement.requestFullscreen();
+      setIsFullscreenViolated(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     if (!started) return;
 
-    const forceFullscreen = async () => {
-      if (!document.fullscreenElement && !submittedRef.current) {
-        try {
-          await document.documentElement.requestFullscreen();
-        } catch (err) {}
-      }
-    };
-
-   const handleFullscreenChange = () => {
-
-  if (!document.fullscreenElement && !submittedRef.current) {
-
-    if (ignoreNextFullscreenExitRef.current) {
-
-      ignoreNextFullscreenExitRef.current = false;
-
-      document.documentElement.requestFullscreen().catch(() => {});
-
-      return;
-    }
-
-    fullscreenExitCountRef.current++;
-    syncMetrics();
-
-    if (fullscreenExitCountRef.current >= 3) {
-      submitCode("fullscreen");
-      return;
-    }
-
-    alert(
-      `Fullscreen exited.\n\nRemaining Attempts: ${
-        3 - fullscreenExitCountRef.current
-      }`
-    );
-
-    document.documentElement.requestFullscreen().catch(() => {});
-  }
-};
-
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
   }, [started]);
 
-  // --- HARD-BOUND PROCTORING LISTENERS ---
   useEffect(() => {
     if (!started) return;
 
     const handleVisibility = () => {
       if (document.hidden) {
         tabSwitchCountRef.current++;
+        localStorage.setItem("assignment_tab_switches", tabSwitchCountRef.current);
         syncMetrics();
         if (tabSwitchCountRef.current >= 3 && !submittedRef.current) {
           submitCode("tab");
@@ -384,6 +409,7 @@ function AssignmentPanel() {
 
     const handleBlur = () => {
       blurCountRef.current++;
+      localStorage.setItem("assignment_blur_events", blurCountRef.current);
       syncMetrics();
     };
 
@@ -397,54 +423,39 @@ function AssignmentPanel() {
     };
 
     const handleKeyDown = (e) => {
-  const key = e.key.toLowerCase();
+      const key = e.key.toLowerCase();
 
-  // Block Ctrl+C, Ctrl+V, Ctrl+X
-  if (
-    (e.ctrlKey || e.metaKey) &&
-    (key === "c" || key === "v" || key === "x")
-  ) {
-    e.preventDefault();
-    e.stopPropagation();
+      if ((e.ctrlKey || e.metaKey) && (key === "c" || key === "v" || key === "x")) {
+        e.preventDefault();
+        e.stopPropagation();
 
-    ignoreNextFullscreenExitRef.current = true;
+        if (key === "c") copyAttemptsRef.current++;
+        if (key === "v") pasteAttemptsRef.current++;
+        if (key === "x") cutAttemptsRef.current++;
 
-    if (key === "c") copyAttemptsRef.current++;
-    if (key === "v") pasteAttemptsRef.current++;
-    if (key === "x") cutAttemptsRef.current++;
+        syncMetrics();
+        return;
+      }
 
-    syncMetrics();
+      const isF12 = e.key === "F12";
+      const isInspectElement = e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J");
+      const isViewSource = e.ctrlKey && e.key.toLowerCase() === "u";
 
-    // alert(`${key.toUpperCase()} operation is disabled.`);
+      if (isF12 || isInspectElement || isViewSource) {
+        e.preventDefault();
+        blockedShortcutAttemptsRef.current++;
+        syncMetrics();
+        return;
+      }
 
-    return;
-  }
+      keyboardLogsRef.current.push({
+        key: e.key,
+        timestamp: new Date().toISOString()
+      });
 
-  const isF12 = e.key === "F12";
-  const isInspectElement =
-    e.ctrlKey &&
-    e.shiftKey &&
-    (e.key === "I" || e.key === "J");
-
-  const isViewSource =
-    e.ctrlKey &&
-    e.key.toLowerCase() === "u";
-
-  if (isF12 || isInspectElement || isViewSource) {
-    e.preventDefault();
-    blockedShortcutAttemptsRef.current++;
-    syncMetrics();
-    return;
-  }
-
-  keyboardLogsRef.current.push({
-    key: e.key,
-    timestamp: new Date().toISOString()
-  });
-
-  lastActivityTimeRef.current = Date.now();
-  syncMetrics();
-};
+      lastActivityTimeRef.current = Date.now();
+      syncMetrics();
+    };
 
     const handleMouseClick = () => {
       mouseClickCountRef.current++;
@@ -468,7 +479,6 @@ function AssignmentPanel() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("popstate", handlePopState);
-    // window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("click", handleMouseClick);
     window.addEventListener("mousemove", handleMouseMove);
@@ -478,14 +488,15 @@ function AssignmentPanel() {
     window.addEventListener("contextmenu", handleContextMenu);
 
     const timeInterval = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timeInterval);
-          submitCode("timeout");
-          return 0;
-        }
-        return prevTime - 1;
-      });
+      const endTime = Number(localStorage.getItem("assignment_end_time"));
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(timeInterval);
+        submitCode("timeout");
+      }
 
       const timeSinceLastActivity = (Date.now() - lastActivityTimeRef.current) / 1000;
       if (timeSinceLastActivity >= 30) {
@@ -500,21 +511,57 @@ function AssignmentPanel() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("popstate", handlePopState);
-      // window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("click", handleMouseClick);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("copy", handleCopy);
       window.removeEventListener("cut", handleCut);
       window.removeEventListener("paste", handlePaste);
-      document.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("contextmenu", handleContextMenu);
       clearInterval(timeInterval);
     };
-  }, [started, language, code, questionIndex, questions, submitting]);
+  }, [started]); 
 
   const startAssignment = async () => {
-    assignmentStartRef.current = new Date().toISOString();
+    if (loadingQuestions) {
+      alert("Coding questions are still loading. Please wait...");
+      return;
+    }
+
+    if (questions.length === 0) {
+      alert("No coding questions available.");
+      return;
+    }
+
+    const startTimeISO = new Date().toISOString();
+    assignmentStartRef.current = startTimeISO;
     lastActivityTimeRef.current = Date.now();
+
+    // Reset previous submitted state & sync React State
+    localStorage.removeItem("assignment_submitted");
+    setIsSubmitted(false);
+
+    // Reset metric logs in localStorage for a clean attempt
+    localStorage.removeItem("assignment_tab_switches");
+    localStorage.removeItem("assignment_blur_events");
+    localStorage.removeItem("assignment_fullscreen_exits");
+    tabSwitchCountRef.current = 0;
+    blurCountRef.current = 0;
+    fullscreenExitCountRef.current = 0;
+    syncMetrics();
+
+    // Assignment Starts -> Write storage config
+    localStorage.setItem("assignment_running", "true");
+    setHasPreviousAssignment(true);
+    
+    const absoluteEndTime = Date.now() + ASSIGNMENT_DURATION_SECONDS * 1000;
+    localStorage.setItem("assignment_end_time", absoluteEndTime);
+    
+    localStorage.setItem("assignment_resume_count", "0");
+    localStorage.setItem("assignment_start", startTimeISO);
+    localStorage.setItem("assignment_language", language);
+    localStorage.setItem("assignment_questions", JSON.stringify(questions));
+
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
@@ -522,6 +569,60 @@ function AssignmentPanel() {
     } catch (err) {
       console.log("Fullscreen request initialization skipped:", err);
     }
+
+    setStarted(true);
+    setTimeout(async () => {
+      if (!document.fullscreenElement) {
+        try {
+          await document.documentElement.requestFullscreen();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }, 0);
+
+    await startRecording();
+  };
+
+  const resumeAssignment = async () => {
+    const count = Number(localStorage.getItem("assignment_resume_count") || 0);
+
+    if (count >= MAX_RESUMES) {
+      submitCode("resume_limit");
+      return;
+    }
+
+    localStorage.setItem("assignment_resume_count", count + 1);
+    setResumeCount(count + 1);
+
+    const endTime = Number(localStorage.getItem("assignment_end_time"));
+    const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+    setTimeLeft(remaining);
+
+    setQuestionIndex(Number(localStorage.getItem("assignment_question") || 0));
+    
+    const savedLanguage = localStorage.getItem("assignment_language") || "java";
+    setLanguage(savedLanguage);
+
+    const savedQuestions = JSON.parse(localStorage.getItem("assignment_questions") || "[]");
+    if (savedQuestions && savedQuestions.length > 0) {
+      setQuestions(savedQuestions);
+      questionsRef.current = savedQuestions;
+    }
+
+    // Refresh refs to mirror metrics precisely upon sudden tab recovery
+    tabSwitchCountRef.current = Math.max(0,parseInt(localStorage.getItem("assignment_tab_switches") || "0", 10) - 1);
+    blurCountRef.current = parseInt(localStorage.getItem("assignment_blur_events") || "0", 10);
+    fullscreenExitCountRef.current = parseInt(localStorage.getItem("assignment_fullscreen_exits") || "0", 10);
+    syncMetrics();
+
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (err) {
+      console.log("Fullscreen request initialization skipped:", err);
+    }
+
+    assignmentStartRef.current = localStorage.getItem("assignment_start");
     setStarted(true);
     await startRecording();
   };
@@ -529,23 +630,34 @@ function AssignmentPanel() {
   useEffect(() => {
     if (!started || submittedRef.current) return;
 
-    const restoreFullscreen = () => {
+    const restoreFullscreen = async () => {
       if (!document.fullscreenElement) {
-        document.documentElement
-          .requestFullscreen()
-          .catch(() => {});
+        try {
+          await document.documentElement.requestFullscreen();
+        } catch {}
       }
     };
 
     window.addEventListener("click", restoreFullscreen);
-    window.addEventListener("mousemove", restoreFullscreen);
     window.addEventListener("keydown", restoreFullscreen);
 
     return () => {
       window.removeEventListener("click", restoreFullscreen);
-      window.removeEventListener("mousemove", restoreFullscreen);
       window.removeEventListener("keydown", restoreFullscreen);
     };
+  }, [started]);
+
+  // Before unload block to verify running status
+  useEffect(() => {
+    const beforeUnload = () => {
+      if (started && !submittedRef.current) {
+        localStorage.setItem("assignment_running", "true");
+      }
+    };
+
+    window.addEventListener("beforeunload", beforeUnload);
+
+    return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [started]);
 
   const handleQuestionChange = (index) => {
@@ -556,6 +668,9 @@ function AssignmentPanel() {
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
+    if (started) {
+      localStorage.setItem("assignment_language", lang);
+    }
   };
 
   const runCode = async () => {
@@ -571,139 +686,217 @@ function AssignmentPanel() {
     }
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  if (!started) {
+  // 1. Resume Screen Layout
+  if (!started && hasPreviousAssignment && !isSubmitted) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "#f8fafc" }}>
-        <h1 style={{ fontFamily: "Arial", color: "#1e293b", marginBottom: "20px" }}>Secure Assessment Environment</h1>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "#efefd0" }}>
+        <h1 style={{ fontFamily: "Arial", color: "#2b3a2e", marginBottom: "20px" }}>Resume Assignment</h1>
         <div style={{ background: "#fff", padding: "30px", borderRadius: "8px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", textAlign: "center", maxWidth: "500px" }}>
-          <p style={{ fontFamily: "Arial", color: "#64748b", marginBottom: "25px", lineHeight: "1.5" }}>
-            This test triggers comprehensive proctoring analytics including active background video/audio feed evaluation, layout lockouts, and context control locks.
+          <p style={{ fontFamily: "Arial", color: "#e11d48", fontWeight: "bold", marginBottom: "15px" }}>
+            An active exam session was detected!
           </p>
-          <button onClick={startAssignment} style={{ padding: "12px 24px", fontSize: 16, background: "#2563eb", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
-            Accept Permissions & Start
-          </button>
+          <p style={{ fontFamily: "Arial", color: "#4b5563", marginBottom: "25px", lineHeight: "1.5" }}>
+            You have used <strong>{resumeCount}</strong> out of <strong>{MAX_RESUMES}</strong> allowed session resumes. 
+            Exceeding this limit will instantly auto-submit your assignment.
+          </p>
+          {loadingQuestions ? (
+            <p style={{ fontSize: "18px", fontWeight: "600", color: "#3a5a40" }}>
+              Loading Questions...
+            </p>
+          ) : (
+            <button
+              onClick={resumeAssignment}
+              style={{
+                padding: "12px 24px",
+                fontSize: 16,
+                background: "#e11d48",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Resume Assignment
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
+  // 2. Default Initial Start Layout
+  if (!started) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "#efefd0" }}>
+        <h1 style={{ fontFamily: "Arial", color: "#2b3a2e", marginBottom: "20px" }}>Secure Assessment Environment</h1>
+        <div style={{ background: "#fff", padding: "30px", borderRadius: "8px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", textAlign: "center", maxWidth: "500px" }}>
+          <p style={{ fontFamily: "Arial", color: "#9a9a8f", marginBottom: "25px", lineHeight: "1.5" }}>
+            This test triggers comprehensive proctoring analytics including active background video/audio feed evaluation, layout lockouts, and context control locks.
+          </p>
+          {loadingQuestions ? (
+            <p style={{ fontSize: "18px", fontWeight: "600", color: "#3a5a40" }}>
+              Loading Questions...
+            </p>
+          ) : (
+            <button
+              onClick={startAssignment}
+              style={{
+                padding: "12px 24px",
+                fontSize: 16,
+                background: "#3a5a40",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Accept Permissions & Start
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
+  // 3. Main Coding Dashboard Layout
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "Arial", position: "relative", overflow: "hidden" }}>
-      {/* SECURITY WATERMARK OVERLAY */}
-      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 9999, opacity: 0.04, fontSize: "28px", fontWeight: "bold", color: "#000", display: "flex", flexWrap: "wrap", justifyContent: "space-around", contentVisibility: "auto" }}>
+    <div className="app-shell" style={{ position: "relative" }}>
+      <div style={{
+        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+        pointerEvents: 'none', zIndex: 9999, opacity: 0.04, fontSize: '28px',
+        fontWeight: 'bold', color: '#000', display: 'flex', flexWrap: 'wrap',
+        justifyContent: 'space-around'
+      }}>
         {Array.from({ length: 16 }).map((_, i) => (
           <div key={i} style={{ transform: "rotate(-25deg)", margin: "80px" }}>SECURE EXAM CONTEXT</div>
         ))}
       </div>
 
-      {/* LEFT PANEL */}
-      <div style={{ width: "40%", borderRight: "1px solid #cbd5e1", padding: 20, overflowY: "auto", background: "#f8fafc" }}>
-        <h2>Coding Assignment</h2>
-        
-        {!isOnline && (
-          <div style={{ background: "#ef4444", color: "#fff", padding: "10px", borderRadius: "5px", marginBottom: "10px", fontWeight: "bold", textAlign: "center" }}>
-            ⚠️ NETWORK OFFLINE DETECTED. Progress continues saving locally. Avoid refreshing.
-          </div>
-        )}
-
-        <div style={{ background: "#fee2e2", padding: 10, borderRadius: 5, marginBottom: 10 }}>
-          <h3 style={{ margin: 0, color: "#dc2626" }}>Time Remaining: {formatTime(timeLeft)}</h3>
-        </div>
-
-        {/* FEED MONITOR PREVIEW */}
-        <div style={{ margin: "10px 0", borderRadius: "6px", overflow: "hidden", border: "2px solid #3b82f6", width: "160px", height: "120px", background: "#000" }}>
-          <video ref={videoPreviewRef} autoPlay muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        </div>
-
-        {/* PROCTORING DIAGNOSTIC DASHBOARD */}
-        <div style={{ background: "#f3f4f6", padding: "12px", borderRadius: 6, marginBottom: 20, fontSize: "13px", border: "1px solid #d1d5db" }}>
-          <h4 style={{ margin: "0 0 8px 0", color: "#4b5563" }}>Proctoring Metrics (Active Diagnostics)</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-            <div>Tab Switches: <strong>{metrics.tabSwitches} / 3</strong></div>
-            <div>Blur Events: <strong>{metrics.blurEvents}</strong></div>
-            <div>Fullscreen Exits: <strong>{metrics.fullscreenExits}</strong></div>
-            <div>Copy Attempts: <strong>{metrics.copyAttempts}</strong></div>
-            <div>Cut Attempts: <strong>{metrics.cutAttempts}</strong></div>
-            <div>Paste Attempts: <strong>{metrics.pasteAttempts}</strong></div>
-            <div>Right Clicks: <strong>{metrics.rightClicks}</strong></div>
-            <div>Key Presses: <strong>{metrics.keyPresses}</strong></div>
-            <div>Blocked Shortcuts: <strong>{metrics.blockedShortcuts}</strong></div>
-            <div style={{ gridColumn: "1 / span 2" }}>Idle Tracker (&ge;30s Limit): <strong>{metrics.idleTime}s</strong></div>
-          </div>
-        </div>
-
-        {questions.length > 0 && (
-          <>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontWeight: "bold" }}>Select Question: </label>
-              <select value={questionIndex} onChange={(e) => handleQuestionChange(Number(e.target.value))} style={{ padding: "6px", borderRadius: "4px" }}>
-                {questions.map((q, index) => (
-                  <option key={index} value={index}>Question {index + 1}: {q.title}</option>
-                ))}
-              </select>
-            </div>
-
-            <h3>{currentQuestion?.title}</h3>
-            <p>{currentQuestion?.description}</p>
-            <h3>Input Description</h3>
-            <p>{currentQuestion?.input}</p>
-            <h3>Output Description</h3>
-            <p>{currentQuestion?.output}</p>
-            <h3>Sample Input</h3>
-            <pre style={{ background: "#e2e8f0", padding: "8px", borderRadius: "4px" }}>{currentQuestion?.sampleInput}</pre>
-            <h3>Sample Output</h3>
-            <pre style={{ background: "#e2e8f0", padding: "8px", borderRadius: "4px" }}>{currentQuestion?.sampleOutput}</pre>
-            <h3>Constraints</h3>
-            <p style={{ fontFamily: "monospace" }}>{currentQuestion?.constraints}</p>
-          </>
-        )}
-      </div>
-
-      {/* RIGHT PANEL */}
-      <div style={{ width: "60%", padding: 20, display: "flex", flexDirection: "column", background: "#ffffff" }}>
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ fontWeight: "bold" }}>Language Selection: </label>
-          <select value={language} onChange={(e) => handleLanguageChange(e.target.value)} style={{ padding: "6px", borderRadius: "4px" }}>
-            <option value="java">Java</option>
-            <option value="c">C</option>
-            <option value="python">Python</option>
-          </select>
-        </div>
-
-        <textarea
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          style={{ width: "100%", flexGrow: 1, minHeight: "300px", fontFamily: "monospace", fontSize: 14, padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
-        />
-
-        <h3>Custom Terminal Input</h3>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          style={{ width: "100%", height: 60, padding: "8px", borderRadius: "4px", border: "1px solid #cbd5e1" }}
-        />
-
-        <div style={{ marginTop: 15, marginBottom: 15 }}>
-          <button onClick={runCode} style={{ padding: "10px 20px", background: "#475569", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>Run Code</button>
-          <button 
-            onClick={() => submitCode("manual")} 
-            disabled={submitting}
-            style={{ marginLeft: 10, padding: "10px 20px", background: submitting ? "#94a3b8" : "#16a34a", color: "white", border: "none", borderRadius: "4px", cursor: submitting ? "not-allowed" : "pointer", fontWeight: "bold" }}
+      <header className="app-header">
+        {isFullscreenViolated && (
+          <div
+            onClickCapture={handleActionFullscreenCapture}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 99999,
+              background: "transparent",
+              cursor: "pointer",
+              userSelect: "none",
+              pointerEvents: "auto",
+            }}
           >
-            {submitting ? "Processing Submit..." : "Submit Examination"}
-          </button>
+            <div
+              style={{
+                position: "absolute",
+                top: 20,
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "#ef4444",
+                color: "#fff",
+                padding: "10px 18px",
+                borderRadius: 20,
+                fontWeight: "bold",
+              }}
+            >
+              Click anywhere to continue the exam in Fullscreen
+            </div>
+          </div>
+        )}
+        <div className="app-title">Coding Assignment</div>
+        <div className={`app-timer ${timeLeft < 60 ? "app-timer--low" : ""}`}>
+          <span className="app-timer-label">Time left</span>
+          <span className="app-timer-value">
+            {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+          </span>
         </div>
+      </header>
 
-        <h3>Output Console</h3>
-        <pre style={{ background: "#0f172a", color: "#38bdf8", padding: 12, borderRadius: 6, minHeight: 100, overflowY: "auto", margin: 0, fontFamily: "monospace" }}>
-          {output}
-        </pre>
+      {!isOnline && (
+        <div className="app-banner" style={{ marginTop: 16 }}>
+          ⚠️ Network offline — progress keeps saving locally, avoid refreshing.
+        </div>
+      )}
+
+      {questions.length > 0 && (
+        <div className="question-picker" style={{ margin: "16px 28px 0" }}>
+          {questions.map((q, index) => (
+            <button
+              key={q.id}
+              type="button"
+              className={`question-picker-btn ${index === questionIndex ? "question-picker-btn--active" : ""}`}
+              onClick={() => handleQuestionChange(index)}
+              title={q.title}
+            >
+              Q{index + 1}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <main className="app-main">
+        <ProblemPanel
+          question={{
+            ...currentQuestion,
+            input: currentQuestion?.inputFormat,
+            output: currentQuestion?.outputFormat
+          }}
+          index={questionIndex}
+          total={questions.length}
+        />
+        <section className="editor-panel">
+          <div className="editor-toolbar">
+            <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--green-dark)" }}>Language: </label>
+            <select
+              className="language-select"
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+            >
+              <option value="java">Java</option>
+              <option value="c">C</option>
+              <option value="python">Python</option>
+            </select>
+            <button type="button" className="btn btn--secondary" style={{ width: "auto" }} onClick={runCode}>
+              Run Code
+            </button>
+            <button
+              type="button"
+              className="btn btn--submit"
+              style={{ width: "auto", marginLeft: "auto" }}
+              onClick={() => submitCode("manual")}
+              disabled={submitting}
+            >
+              {submitting ? "Processing Submit..." : "Submit Examination"}
+            </button>
+          </div>
+
+          <textarea className="code-editor-textarea" value={code} onChange={(e) => setCode(e.target.value)} />
+
+          <div className="problem-section-label">Custom Terminal Input</div>
+          <textarea className="terminal-input-textarea" value={input} onChange={(e) => setInput(e.target.value)} />
+
+          <div className="problem-section-label">Output Console</div>
+          <pre className="output-console">{output}</pre>
+        </section>
+      </main>
+
+      <DraggableCamWindow videoRef={videoPreviewRef} />
+
+      <div className="security-panel" style={{ margin: "0 28px 24px" }}>
+        <h5>Proctoring Metrics (Active Diagnostics)</h5>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px 16px" }}>
+          <div className="security-row"><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
+          <div className="security-row"><span>Blur events</span><strong>{metrics.blurEvents}</strong></div>
+          <div className="security-row"><span>Fullscreen exits</span><strong>{metrics.fullscreenExits}</strong></div>
+        </div>
       </div>
     </div>
   );

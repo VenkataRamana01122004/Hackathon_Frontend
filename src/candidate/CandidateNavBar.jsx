@@ -1,4 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
+import "./candidate.css";
+
 
 function CandidateNavBar({ logout }) {
    const navigate = useNavigate();

@@ -1,0 +1,137 @@
+.review-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.45);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:7000;
+
+}
+
+.review-modal{
+
+    width:750px;
+
+    background:white;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+}
+
+.review-header{
+
+    background:#005EB8;
+
+    color:white;
+
+    padding:20px 25px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.review-header button{
+
+    background:none;
+
+    border:none;
+
+    color:white;
+
+    font-size:22px;
+
+    cursor:pointer;
+
+}
+
+.candidate-review-card{
+
+    padding:20px 25px;
+
+    background:#F5F8FC;
+
+}
+
+.review-body{
+
+    padding:25px;
+
+}
+
+.review-group{
+
+    margin-bottom:20px;
+
+}
+
+.review-group label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-weight:600;
+
+    color:#003B75;
+
+}
+
+.review-group input,
+.review-group textarea,
+.review-group select{
+
+    width:100%;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    border:1px solid #d9e2ec;
+
+}
+
+.review-footer{
+
+    padding:20px;
+
+    display:flex;
+
+    justify-content:flex-end;
+
+}
+
+.assign-btn{
+
+    background:#005EB8;
+
+    color:white;
+
+    border:none;
+
+    padding:14px 30px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+}
+
+.assign-btn:hover{
+
+    background:#003B75;
+
+}

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./candidate.css";
+
 
 const questions = [
 "Tell me about yourself.",

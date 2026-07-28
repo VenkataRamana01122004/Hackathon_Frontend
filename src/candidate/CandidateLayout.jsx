@@ -4,6 +4,7 @@ import CandidateHome from './CandidateHome';
 import InterviewPanel from "./InterviewPanel";
 import AssignmentPanel from './AssignmentPanel';
 import BitsAssessment from "./BitsAssessment";
+// import SubmissionForm from "./SubmissionForm";
 
 const CandidateLayout = ({ logout }) => (
   <>
@@ -12,6 +13,7 @@ const CandidateLayout = ({ logout }) => (
     <Routes>
       <Route path="/" element={<CandidateHome />} />
       <Route path="profile" element={<h2>Profile</h2>} />
+      {/* <Route path="submission" element={<SubmissionForm />} /> */}
       <Route path="interviewpanel" element={<InterviewPanel/>} />
       <Route path="assignment" element={<AssignmentPanel/>}/>
       <Route path="bitsassessment" element={<BitsAssessment/>}/>

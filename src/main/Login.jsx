@@ -28,6 +28,7 @@ function Login({ onLogin }) {
 
       // store user
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      console.log(res.data.user);
 
       const role = res.data.role?.toLowerCase(); // ✅ normalize role
 

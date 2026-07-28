@@ -1,0 +1,157 @@
+.manager-review-page{
+
+    padding:30px;
+
+}
+
+.review-title{
+
+    margin-bottom:30px;
+
+}
+
+.review-title h1{
+
+    color:#003B75;
+
+}
+
+.review-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+}
+
+.review-table th{
+
+    background:#005EB8;
+
+    color:white;
+
+    padding:16px;
+
+}
+
+.review-table td{
+
+    padding:16px;
+
+    border-bottom:1px solid #eee;
+
+}
+
+.review-table tr:hover{
+
+    background:#F5F8FC;
+
+}
+
+.review-table button{
+
+    margin-right:10px;
+
+    border:none;
+
+    cursor:pointer;
+
+    color:white;
+
+    padding:10px;
+
+    border-radius:8px;
+
+}
+
+.view-btn{
+
+    background:#2563EB;
+
+}
+
+.approve-btn{
+
+    background:#16A34A;
+
+}
+
+.reject-btn{
+
+    background:#DC2626;
+
+}
+
+.pending{
+
+    color:#F59E0B;
+
+    font-weight:bold;
+
+}
+
+.approved{
+
+    color:#16A34A;
+
+    font-weight:bold;
+
+}
+
+.rejected{
+
+    color:#DC2626;
+
+    font-weight:bold;
+
+}
+
+.popup{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.45);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.popup-card{
+
+    width:650px;
+
+    background:white;
+
+    border-radius:15px;
+
+    padding:30px;
+
+}
+
+.popup-card button{
+
+    margin-top:20px;
+
+    background:#005EB8;
+
+    color:white;
+
+    border:none;
+
+    padding:12px 25px;
+
+    border-radius:10px;
+
+}

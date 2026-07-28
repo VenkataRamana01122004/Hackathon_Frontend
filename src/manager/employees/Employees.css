@@ -1,0 +1,159 @@
+.employees-page {
+  padding: 35px;
+}
+
+.employees-title {
+  font-size: 40px;
+  font-weight: 700;
+  color: #0f4c97;
+  margin-bottom: 28px;
+}
+
+.employees-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  width: 420px;
+  height: 52px;
+  background: #fff;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 12px;
+}
+
+.search-box svg {
+  color: #2563eb;
+  font-size: 17px;
+}
+
+.search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 15px;
+}
+
+.filter-group select {
+  width: 200px;
+  height: 52px;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  padding: 0 15px;
+  font-size: 15px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.table-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.employee-table thead {
+  background: #2563eb;
+}
+
+.employee-table th {
+  color: white;
+  text-align: left;
+  padding: 18px 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.employee-table td {
+  padding: 18px 20px;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 15px;
+  vertical-align: middle;
+}
+
+.employee-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.employee-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.employee-info h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.employee-info span {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.available {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.busy {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+@media (max-width: 1000px) {
+  .employees-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+
+  .table-card {
+    overflow-x: auto;
+  }
+
+  .employee-table {
+    min-width: 900px;
+  }
+}

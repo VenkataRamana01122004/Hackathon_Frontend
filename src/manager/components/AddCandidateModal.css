@@ -1,0 +1,298 @@
+/* ==========================
+   Add Candidate Modal
+========================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+
+/* ==========================
+   Modal Box
+========================== */
+
+.add-candidate-modal {
+  width: 800px;
+  max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 30px;
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+
+  animation: popup 0.25s ease;
+}
+
+
+/* Popup Animation */
+
+@keyframes popup {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* ==========================
+   Scrollbar
+========================== */
+
+.add-candidate-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.add-candidate-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.add-candidate-modal::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  border-radius: 10px;
+}
+
+.add-candidate-modal::-webkit-scrollbar-thumb:hover {
+  background: #1d4ed8;
+}
+
+
+/* ==========================
+   Heading
+========================== */
+
+.add-candidate-modal h2 {
+  margin: 0 0 25px;
+  text-align: center;
+
+  color: #003b75;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+
+/* ==========================
+   Form Grid
+========================== */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+
+/* ==========================
+   Form Group
+========================== */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+
+.form-group label {
+  margin-bottom: 8px;
+
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+/* ==========================
+   Inputs
+========================== */
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+
+  padding: 12px 14px;
+
+  font-size: 15px;
+  font-family: inherit;
+
+  outline: none;
+
+  transition: 0.2s;
+
+  background: white;
+}
+
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+
+/* File Input */
+
+input[type="file"] {
+  padding: 10px;
+  cursor: pointer;
+}
+
+
+/* ==========================
+   Buttons
+========================== */
+
+.modal-buttons {
+
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 15px;
+
+  margin-top: 25px;
+
+}
+
+
+.cancel-btn,
+.save-btn {
+
+  border: none;
+
+  padding: 12px 28px;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+/* Cancel */
+
+.cancel-btn {
+
+  background: #e5e7eb;
+
+  color: #374151;
+
+}
+
+
+.cancel-btn:hover {
+
+  background: #d1d5db;
+
+}
+
+
+/* Save */
+
+.save-btn {
+
+  background: #2563eb;
+
+  color: white;
+
+}
+
+
+.save-btn:hover {
+
+  background: #1d4ed8;
+
+}
+
+
+/* ==========================
+   Mobile Responsive
+========================== */
+
+@media (max-width: 768px) {
+
+
+  .modal-overlay {
+
+    align-items: flex-start;
+
+    padding: 15px;
+
+  }
+
+
+  .add-candidate-modal {
+
+    width: 100%;
+
+    padding: 20px;
+
+    max-height: 92vh;
+
+  }
+
+
+  .form-grid {
+
+    grid-template-columns: 1fr;
+
+  }
+
+
+  .modal-buttons {
+
+    flex-direction: column;
+
+  }
+
+
+  .cancel-btn,
+  .save-btn {
+
+    width: 100%;
+
+  }
+
+
+  .add-candidate-modal h2 {
+
+    font-size: 24px;
+
+  }
+
+}

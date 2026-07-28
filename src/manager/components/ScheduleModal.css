@@ -1,0 +1,141 @@
+.schedule-overlay{
+
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    z-index:5000;
+
+}
+
+.schedule-modal{
+
+    width:850px;
+    background:white;
+    border-radius:18px;
+    overflow:hidden;
+    animation:popup .3s;
+
+}
+
+.schedule-header{
+
+    background:#005EB8;
+    color:white;
+
+    padding:20px 25px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+}
+
+.schedule-header button{
+
+    border:none;
+    background:none;
+    color:white;
+    font-size:24px;
+    cursor:pointer;
+
+}
+
+.candidate-box{
+
+    padding:20px 25px;
+    background:#F5F8FC;
+
+}
+
+.form-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:20px;
+
+    padding:25px;
+
+}
+
+.input-group{
+
+    display:flex;
+    flex-direction:column;
+
+}
+
+.input-group label{
+
+    margin-bottom:8px;
+
+    font-weight:600;
+
+    color:#003B75;
+
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea{
+
+    padding:12px;
+
+    border:1px solid #d9e2ec;
+
+    border-radius:10px;
+
+    outline:none;
+
+}
+
+.input-group textarea{
+
+    resize:none;
+
+}
+
+.full-width{
+
+    grid-column:1 / span 2;
+
+}
+
+.schedule-footer{
+
+    padding:20px 25px;
+
+    display:flex;
+    justify-content:flex-end;
+
+}
+
+.schedule-save{
+
+    border:none;
+
+    background:#005EB8;
+
+    color:white;
+
+    padding:14px 28px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+}
+
+.schedule-save:hover{
+
+    background:#003B75;
+
+}
