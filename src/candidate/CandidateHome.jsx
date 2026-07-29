@@ -32,9 +32,7 @@ function CandidateHome() {
     codingStatus === "pending";
 
 
-  const canStartInterview =
-    codingStatus === "process" &&
-    interviewStatus === "scheduled";
+  const canStartInterview = interviewStatus === "scheduled";
 
 
 
@@ -189,9 +187,6 @@ function CandidateHome() {
 
           </p>
 
-
-
-
           {!canStartCoding && (
 
             <div className="round-requirements">
@@ -201,11 +196,7 @@ function CandidateHome() {
             </div>
 
           )}
-
-
-
-
-
+          
           <button
 
             className="btn btn--submit round-btn"
@@ -223,22 +214,9 @@ function CandidateHome() {
               : "Locked"}
 
           </button>
-
-
-
         </div>
 
-
-
-
-
-
-
-
-
         {/* ================= ROUND 3 ================= */}
-
-
 
         <div
 
@@ -312,12 +290,6 @@ function CandidateHome() {
 
           )}
 
-
-
-
-
-
-
           <button
 
             className="btn btn--submit round-btn"
@@ -329,23 +301,12 @@ function CandidateHome() {
             }
 
           >
-
             {canStartInterview
               ? "Start Interview"
               : "Locked"}
 
           </button>
-
-
-
-
-
         </div>
-
-
-
-
-
       </div>
 
 

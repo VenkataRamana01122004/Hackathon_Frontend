@@ -39,6 +39,17 @@ const fetchCandidates = async () => {
   }
 };
 
+const validateCandidates = async (userId) => {
+  try {
+    const response = await axios.get(
+      `http://localhost:5000/api/manager/validatecandidate/${userId}`
+    );
+    console.log(response.data);
+    // setCandidates(response.data);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+  }
+};
     const [selectedUser, setSelectedUser] = useState(null);
 
     const [codingOpen, setCodingOpen] = useState(false);
@@ -50,30 +61,22 @@ const fetchCandidates = async () => {
         <div className="assessment-page">
 
             <div className="manager-page-header assessment-header">
-
                 <div>
                     <h1>Assessment Reports</h1>
                     <p>Review candidate coding and MCQ assessment results</p>
                 </div>
-
             </div>
 
             <div className="manager-table-card assessment-table-card">
 
             <table className="manager-table">
-
                 <thead>
-
                     <tr>
-
                         <th>Candidate</th>
-
                         <th>Date</th>
-
                         <th>Coding</th>
-
                         <th>MCQ</th>
-
+                        <th>Validate</th>
                     </tr>
 
                 </thead>
@@ -131,6 +134,18 @@ const fetchCandidates = async () => {
                                 </button>
 
                             </td>
+
+                            <td>
+                                <button
+                                    className="view-btn"
+                                    onClick={()=>{
+                                         validateCandidates(candidate.id);
+                                    }}
+                                >
+                                    Validate
+                                </button>
+                            </td>
+
 
                         </tr>
 

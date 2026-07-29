@@ -65,8 +65,8 @@ const fetchCandidates = async () => {
     const response = await axios.get(
       "http://localhost:5000/api/manager/viewintervieweligiblecandidates"
     );
-
-    setCandidates(response.data);
+    
+    setCandidates(Array.isArray(response.data) ? response.data : []);
   } catch (error) {
     console.error("Error fetching candidates:", error);
   }
