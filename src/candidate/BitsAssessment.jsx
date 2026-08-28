@@ -11,6 +11,7 @@ import "./candidate.css";
 
 // --- CONFIGURATION ---
 const BACKEND_URL = 'http://localhost:5000/api/interview/submitbitsassessment';
+const SECURITY_URL = "http://localhost:5000/api/candidate/security-check";
 const EXAM_DURATION = 300;
 const MAX_RESUMES = 1;  
 
@@ -72,6 +73,7 @@ export default function BitsAssessment() {
   const examFinishedRef = useRef(false);
   const isFullscreenRef = useRef(false);
   const lastFullscreenExitTimeRef = useRef(0);
+  const backgroundApplicationsRef = useRef([]);
 
   // Sync state values instantly to their respective refs
   useEffect(() => { examStartedRef.current = examStarted; }, [examStarted]);
@@ -131,6 +133,54 @@ useEffect(() => {
     logEvent("Application refresh or unexpected crash recovery sequence triggered.");
   }
 }, []);
+
+useEffect(() => {
+  if (!examStarted || examFinished) return;
+
+  const checkBackgroundApplications = async () => {
+    try {
+      // Electron environment
+      if (
+        window.electronAPI &&
+        typeof window.electronAPI.getBackgroundApplications === "function"
+      ) {
+        const result =
+          await window.electronAPI.getBackgroundApplications();
+
+        if (result?.success) {
+          backgroundApplicationsRef.current =
+            result.applications || [];
+
+          console.log(
+            "Background applications:",
+            backgroundApplicationsRef.current
+          );
+        } else {
+          console.warn(
+            "Background application check failed:",
+            result?.error
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Background application check error:",
+        error
+      );
+    }
+  };
+
+  // Check immediately
+  checkBackgroundApplications();
+
+  // Then periodically
+  const interval = setInterval(
+    checkBackgroundApplications,
+    5000
+  );
+
+  return () => clearInterval(interval);
+}, [examStarted, examFinished]);
 
   // --- STRICT FULLSCREEN LOCK GESTURES (Excluding mousemove) ---
   useEffect(() => {
@@ -665,6 +715,68 @@ logEvent("Brand new operational exam profile generated.");
     autoSubmitExam("User submission.");
   };
 
+  const submitSecurityCheck = async () => {
+
+  try {
+
+    const securityData = {
+
+      candidateId: user?.id,
+
+      backgroundApplications:
+        backgroundApplicationsRef.current,
+
+      fullscreenExits:
+        fullscreenExitsRef.current,
+
+      tabSwitches:
+        tabSwitchesRef.current,
+
+      isBlurred:
+        isBlurredRef.current,
+
+      isOffline:
+        isOfflineRef.current,
+
+      securityPassed: true,
+
+      securityLogs:
+        logsRef.current
+    };
+
+    console.log(
+      "Submitting security check data:",
+      securityData
+    );
+
+    const response = await axios.post(
+      SECURITY_URL,
+      securityData,
+      {
+        timeout: 15000
+      }
+    );
+
+    console.log(
+      "Security check saved successfully:",
+      response.data
+    );
+
+    return response.data;
+
+  } catch (error) {
+
+    console.error(
+      "Security check submission failed:",
+      error
+    );
+
+    // Do NOT stop exam submission if security API fails.
+    return null;
+  }
+};
+
+
   const autoSubmitExam = async (reason) => {
     if (submittingRef.current) return;
 
@@ -685,6 +797,8 @@ logEvent("Brand new operational exam profile generated.");
     }
 
     await sendExamData(mediaRecorderRef.current?.finalBlob || null);
+
+    await submitSecurityCheck();
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());

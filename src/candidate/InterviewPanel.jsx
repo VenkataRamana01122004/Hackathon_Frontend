@@ -1,454 +1,738 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
 
-
-const questions = [
-"Tell me about yourself.",
-"Why do you want to join our company?",
-"What are your strengths?"
+const QUESTIONS = [
+  "Tell me about yourself.",
+  "Why do you want to join our company?",
+  "What are your strengths?",
 ];
 
+const INTERVIEW_TIME = 30;
+const MAX_TAB_SWITCHES = 3;
+const API_URL = "http://localhost:5000/api/interview/upload";
+
 function InterviewPanel() {
-	
-	const navigate = useNavigate();
-	
-	const user = JSON.parse(localStorage.getItem("user"));
-	const loggedInUser = user?.id;
-	
-	const interviewStartRef = useRef(null);
-	
-	const tabSwitchCountRef = useRef(0);
-	const [tabSwitchCount, setTabSwitchCount] = useState(0);
-	
-	const videoRef = useRef(null);
-	const mediaStream = useRef(null);
-	const recognitionRef = useRef(null);
-	
-	const mediaRecorder = useRef(null);
-	const recordedChunks = useRef([]);
-	
-	const [started, setStarted] = useState(false);
-	const [currentQuestion, setCurrentQuestion] = useState(0);
-	const [allAnswers, setAllAnswers] = useState([]);
-	
-	const [isRecording, setIsRecording] = useState(false);
-	const [transcript, setTranscript] = useState("");
-	const [interimTranscript, setInterimTranscript] = useState("");
-	
-	const INTERVIEW_TIME = 30;
-	
-	const [timeLeft, setTimeLeft] = useState(INTERVIEW_TIME);
-	const [startTime, setStartTime] = useState(null);
-	const [endTime, setEndTime] = useState(null);
-	const [elapsedSeconds, setElapsedSeconds] = useState(0);
-	const submittedRef = useRef(false);
-	
-	useEffect(() => {
-		const SpeechRecognition =
-		window.SpeechRecognition || window.webkitSpeechRecognition;
-		
-		if (!SpeechRecognition) {
-			alert("Speech Recognition not supported. Please use Google Chrome.");
-			return;
-		}
-		
-		const recognition = new SpeechRecognition();
-		
-		recognition.continuous = true;
-		recognition.interimResults = true;
-		recognition.lang = "en-US";
-		
-		recognition.onstart = () => {
-			setIsRecording(true);
-		};
-		
-		recognition.onend = () => {
-			setIsRecording(false);
-		};
-		
-		recognition.onerror = (e) => {
-			console.log("Speech Error:", e);
-			setIsRecording(false);
-		};
-		
-		recognition.onresult = (event) => {
-			let finalTranscript = "";
-			let interim = "";
-			
-			for (let i = event.resultIndex; i < event.results.length; i++) {
-				const text = event.results[i][0].transcript;
-				
-				if (event.results[i].isFinal) {
-					finalTranscript += text + " ";
-				} else {
-					interim += text;
-				}
-			}
-			
-			if (finalTranscript) {
-				setTranscript((prev) => prev + finalTranscript);
-			}
-			
-			setInterimTranscript(interim);
-		};
-		
-		recognitionRef.current = recognition;
-	}, []);
-	
-	useEffect(() => {
-		const handleVisibility = () => {
-			if (document.hidden) {
-				tabSwitchCountRef.current += 1;
-				setTabSwitchCount(tabSwitchCountRef.current);
-				
-				console.log("Tab Switch:", tabSwitchCountRef.current);
-				
-				if (tabSwitchCountRef.current >= 3 && !submittedRef.current) {
-					const finalAnswers = [
-					...allAnswers,
-					{
-						questionNo: currentQuestion + 1,
-						question: questions[currentQuestion],
-						answer: transcript.trim(),
-					},
-					];
-					
-					finishInterview(finalAnswers);
-				}
-			}
-		};
-		
-		document.addEventListener("visibilitychange", handleVisibility);
-		
-		return () =>
-		document.removeEventListener("visibilitychange", handleVisibility);
-	}, [currentQuestion, transcript, allAnswers]);
-	
-	useEffect(() => {
-		if (!started)
-			return;
-		
-		const timer = setInterval(() => {
-			setElapsedSeconds(prev => prev + 1);
-			
-			setTimeLeft(prev => {
-				if (prev <= 1) {
-					clearInterval(timer);
-					
-					const finalAnswers = [
-					...allAnswers,
-					{
-						questionNo: currentQuestion + 1,
-						question: questions[currentQuestion],
-						answer: transcript.trim(),
-					},
-					];
-					
-					finishInterview(finalAnswers);
-					
-					return 0;
-				}
-				
-				return prev - 1;
-			});
-		}, 1000);
-		
-		return () => clearInterval(timer);
-		
-	}, [started, currentQuestion, transcript, allAnswers]);
-	
-	useEffect(() => {
-		if (!started)
-			return;
-		
-		const forceFullscreen = async () => {
-			if (!document.fullscreenElement && !submittedRef.current) {
-				try {
-					await document.documentElement.requestFullscreen();
-				} catch (err) {
-					console.log("Unable to re-enter fullscreen:", err);
-				}
-			}
-		};
-		
-		const handleFullscreenChange = () => {
-			// User exited fullscreen
-			if (!document.fullscreenElement) {
-				forceFullscreen();
-			}
-		};
-		
-		document.addEventListener("fullscreenchange", handleFullscreenChange);
-		
-		// Also check every second
-		const interval = setInterval(() => {
-			if (!document.fullscreenElement && !submittedRef.current) {
-				forceFullscreen();
-			}
-		}, 1000);
-		
-		return () => {
-			document.removeEventListener(
-			"fullscreenchange",
-			handleFullscreenChange
-			);
-			clearInterval(interval);
-		};
-	}, [started]);
-	
-	useEffect(() => {
+  const navigate = useNavigate();
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const [started, setStarted] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [allAnswers, setAllAnswers] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(INTERVIEW_TIME);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+
+  const [mediaReady, setMediaReady] = useState(false);
+  const [mediaError, setMediaError] = useState("");
+  const [checkingMedia, setCheckingMedia] = useState(false);
+
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const videoRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const audioAnimationRef = useRef(null);
+
+  const answerRef = useRef("");
+  const questionRef = useRef(0);
+  const answersRef = useRef([]);
+  const tabSwitchRef = useRef(0);
+
+  const submittedRef = useRef(false);
+  const interviewStartRef = useRef(null);
+
+  // --------------------------------------------------
+  // MEDIA
+  // --------------------------------------------------
+
+  const stopVoiceDetection = useCallback(() => {
+    if (audioAnimationRef.current) {
+      cancelAnimationFrame(audioAnimationRef.current);
+      audioAnimationRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+
+    analyserRef.current = null;
+    setIsSpeaking(false);
+  }, []);
+
+  const stopMedia = useCallback(() => {
+    stopVoiceDetection();
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setMediaReady(false);
+  }, [stopVoiceDetection]);
+
+  const checkMediaPermissions = useCallback(async () => {
+    setCheckingMedia(true);
+    setMediaError("");
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera and microphone are not supported by this browser.");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user",
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      if (!stream.getVideoTracks().length) {
+        throw new Error("Camera was not detected.");
+      }
+
+      if (!stream.getAudioTracks().length) {
+        throw new Error("Microphone was not detected.");
+      }
+
+      mediaStreamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+
+      setMediaReady(true);
+    } catch (error) {
+      console.error("Media error:", error);
+
+      setMediaReady(false);
+
+      const messages = {
+        NotAllowedError:
+          "Camera or microphone permission was denied. Please allow both permissions and try again.",
+        NotFoundError:
+          "Camera or microphone was not found. Please connect both devices and try again.",
+        NotReadableError:
+          "Camera or microphone is being used by another application.",
+      };
+
+      setMediaError(
+        messages[error.name] ||
+          error.message ||
+          "Camera and microphone are required."
+      );
+    } finally {
+      setCheckingMedia(false);
+    }
+  }, []);
+
+  // --------------------------------------------------
+  // VOICE DETECTION
+  // --------------------------------------------------
+
+  const startVoiceDetection = useCallback((stream) => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+      if (!AudioContext) return;
+
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
+
+      const microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+
+      const data = new Uint8Array(analyser.fftSize);
+      const THRESHOLD = 0.08;
+
+      const detect = () => {
+        if (!analyserRef.current || submittedRef.current) return;
+
+        analyserRef.current.getByteTimeDomainData(data);
+
+        let sum = 0;
+
+        for (const value of data) {
+          const normalized = (value - 128) / 128;
+          sum += normalized * normalized;
+        }
+
+        const volume = Math.sqrt(sum / data.length);
+        setIsSpeaking(volume > THRESHOLD);
+
+        audioAnimationRef.current = requestAnimationFrame(detect);
+      };
+
+      detect();
+    } catch (error) {
+      console.error("Voice detection error:", error);
+    }
+  }, []);
+
+  // --------------------------------------------------
+  // RECORDING
+  // --------------------------------------------------
+
+  const startRecording = useCallback((stream) => {
+    recordedChunksRef.current = [];
+
+    try {
+      const mimeType = MediaRecorder.isTypeSupported(
+        "video/webm;codecs=vp8,opus"
+      )
+        ? "video/webm;codecs=vp8,opus"
+        : "";
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = (event) => {
+        console.error("Recording error:", event);
+      };
+
+      recorder.start(1000);
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+
+      return true;
+    } catch (error) {
+      console.error("MediaRecorder error:", error);
+      return false;
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    return new Promise((resolve) => {
+      const recorder = mediaRecorderRef.current;
+
+      if (!recorder || recorder.state === "inactive") {
+        setIsRecording(false);
+        resolve();
+        return;
+      }
+
+      recorder.onstop = () => {
+        setIsRecording(false);
+        resolve();
+      };
+
+      recorder.stop();
+    });
+  }, []);
+
+  // --------------------------------------------------
+  // ANSWERS
+  // --------------------------------------------------
+
+  const getCurrentAnswer = useCallback(() => {
+    const index = questionRef.current;
+
+    return {
+      questionNo: index + 1,
+      question: QUESTIONS[index],
+      answer: answerRef.current.trim(),
+    };
+  }, []);
+
+  const saveCurrentAnswer = () => {
+    const updated = [...answersRef.current, getCurrentAnswer()];
+
+    answersRef.current = updated;
+    setAllAnswers(updated);
+
+    return updated;
+  };
+
+  // --------------------------------------------------
+  // FINISH INTERVIEW
+  // --------------------------------------------------
+
+  const finishInterview = useCallback(
+    async (answers) => {
+      if (submittedRef.current) return;
+
+      submittedRef.current = true;
+      setIsSubmitting(true);
+
+      try {
+        const endTime = new Date().toISOString();
+
+        stopVoiceDetection();
+        await stopRecording();
+
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+        }
+
+        if (document.fullscreenElement) {
+          await document.exitFullscreen().catch(() => {});
+        }
+
+        const videoBlob = new Blob(recordedChunksRef.current, {
+          type: "video/webm",
+        });
+
+        const formData = new FormData();
+
+        formData.append("userId", String(user?.id || ""));
+        formData.append("submittedAt", endTime);
+        formData.append(
+          "interviewStartTime",
+          interviewStartRef.current || ""
+        );
+        formData.append("interviewEndTime", endTime);
+        formData.append("totalInterviewTime", String(INTERVIEW_TIME));
+        formData.append("timeTaken", String(elapsedSeconds));
+        formData.append(
+          "tabSwitchCount",
+          String(tabSwitchRef.current)
+        );
+        formData.append("answers", JSON.stringify(answers));
+
+        if (videoBlob.size > 0) {
+          formData.append("video", videoBlob, "interview.webm");
+        }
+
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Video upload failed.");
+        }
+
+        const updatedUser = JSON.parse(
+          localStorage.getItem("user") || "{}"
+        );
+
+        updatedUser.interviewStatus = "Process";
+
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        alert("Interview submitted successfully.");
+        navigate("/candidate");
+      } catch (error) {
+        console.error("Submission error:", error);
+
+        submittedRef.current = false;
+        setIsSubmitting(false);
+
+        alert("Interview submission failed.");
+      }
+    },
+    [
+      elapsedSeconds,
+      navigate,
+      stopRecording,
+      stopVoiceDetection,
+      user?.id,
+    ]
+  );
+
+  // --------------------------------------------------
+  // START INTERVIEW
+  // --------------------------------------------------
+
+  const startInterview = async () => {
+    if (!mediaReady) {
+      await checkMediaPermissions();
+      return;
+    }
+
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+
+      const stream = mediaStreamRef.current;
+
+      if (!stream) {
+        throw new Error("Camera/microphone stream is unavailable.");
+      }
+
+      startVoiceDetection(stream);
+
+      if (!startRecording(stream)) {
+        throw new Error("Unable to start video recording.");
+      }
+
+      interviewStartRef.current = new Date().toISOString();
+
+      setTimeLeft(INTERVIEW_TIME);
+      setElapsedSeconds(0);
+      setStarted(true);
+    } catch (error) {
+      console.error("Start interview error:", error);
+      alert("Unable to start interview. Please check your camera and microphone.");
+    }
+  };
+
+  // --------------------------------------------------
+  // NEXT QUESTION
+  // --------------------------------------------------
+
+  const nextQuestion = () => {
+    const updatedAnswers = saveCurrentAnswer();
+
+    if (questionRef.current < QUESTIONS.length - 1) {
+      const next = questionRef.current + 1;
+
+      questionRef.current = next;
+      answerRef.current = "";
+
+      setCurrentQuestion(next);
+      setAnswer("");
+    } else {
+      finishInterview(updatedAnswers);
+    }
+  };
+
+  // --------------------------------------------------
+  // TIMER
+  // --------------------------------------------------
+
+  useEffect(() => {
     if (!started) return;
 
-    const handleFullscreenChange = () => {
-        if (!document.fullscreenElement && !submittedRef.current) {
-            alert("Fullscreen exited. Interview will be submitted.");
+    const timer = setInterval(() => {
+      setElapsedSeconds((value) => value + 1);
 
-            finishInterview([
-                ...allAnswers,
-                {
-                    questionNo: currentQuestion + 1,
-                    question: questions[currentQuestion],
-                    answer: transcript.trim(),
-                },
-            ]);
+      setTimeLeft((value) => {
+        if (value <= 1) {
+          clearInterval(timer);
+
+          finishInterview([
+            ...answersRef.current,
+            getCurrentAnswer(),
+          ]);
+
+          return 0;
         }
+
+        return value - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [started, finishInterview, getCurrentAnswer]);
+
+  // --------------------------------------------------
+  // TAB SWITCH + FULLSCREEN
+  // --------------------------------------------------
+
+  useEffect(() => {
+    if (!started) return;
+
+    const handleVisibility = () => {
+      if (!document.hidden || submittedRef.current) return;
+
+      const count = tabSwitchRef.current + 1;
+
+      tabSwitchRef.current = count;
+      setTabSwitchCount(count);
+
+      if (count >= MAX_TAB_SWITCHES) {
+        alert("Maximum tab switches reached. Interview will be submitted.");
+
+        finishInterview([
+          ...answersRef.current,
+          getCurrentAnswer(),
+        ]);
+      }
     };
 
-    document.addEventListener(
-        "fullscreenchange",
-        handleFullscreenChange
-    );
+    const handleFullscreen = () => {
+      if (!document.fullscreenElement && !submittedRef.current) {
+        alert("Fullscreen was exited. Interview will be submitted.");
 
-    return () =>
-        document.removeEventListener(
-            "fullscreenchange",
-            handleFullscreenChange
-        );
-}, [started, currentQuestion, transcript, allAnswers]);
+        finishInterview([
+          ...answersRef.current,
+          getCurrentAnswer(),
+        ]);
+      }
+    };
 
-	const startInterview = async () => {
-		interviewStartRef.current = new Date().toISOString();
-		try {
-			if (document.documentElement.requestFullscreen) {
-				await document.documentElement.requestFullscreen();
-			}
-			
-			const stream = await navigator.mediaDevices.getUserMedia({
-				video: true,
-				audio: true,
-			});
-			
-			mediaStream.current = stream;
-			videoRef.current.srcObject = stream;
-			
-			// Start recording video
-			recordedChunks.current = [];
-			
-			const recorder = new MediaRecorder(stream);
-			
-			recorder.ondataavailable = (e) => {
-				if (e.data.size > 0) {
-					recordedChunks.current.push(e.data);
-				}
-			};
-			
-			recorder.start();
-			
-			mediaRecorder.current = recorder;
-			
-			setStarted(true);
-		} catch (err) {
-			console.log(err);
-			alert("Camera/Microphone permission denied");
-		}
-	};
-	
-	const startAnswer = () => {
-		setTranscript("");
-		setInterimTranscript("");
-		
-		recognitionRef.current.start();
-	};
-	
-	const nextQuestion = () => {
-		recognitionRef.current.stop();
-		
-		const answerObject = {
-			questionNo: currentQuestion + 1,
-			question: questions[currentQuestion],
-			answer: transcript.trim(),
-		};
-		
-		const updatedAnswers = [...allAnswers, answerObject];
-		
-		setAllAnswers(updatedAnswers);
-		
-		if (currentQuestion < questions.length - 1) {
-			setCurrentQuestion((prev) => prev + 1);
-		} else {
-			finishInterview(updatedAnswers);
-		}
-	};
-  
-	const finishInterview = async (answers) => {
-		
-		if (submittedRef.current)
-			return;
-		
-		submittedRef.current = true;
-		
-		setEndTime(new Date().toISOString());
-		if (!interviewStartRef.current) {
-			interviewStartRef.current = new Date().toISOString();
-		}
-		try {
-			recognitionRef.current.stop();
-			
-			// Stop recording
-			if (mediaRecorder.current) {
-				mediaRecorder.current.stop();
-				
-				await new Promise((resolve) => {
-					mediaRecorder.current.onstop = resolve;
-				});
-			}
-			
-			// Stop camera
-			if (mediaStream.current) {
-				mediaStream.current.getTracks().forEach((track) => track.stop());
-			}
-			
-			if (document.fullscreenElement) {
-				await document.exitFullscreen();
-			}
-			
-			const videoBlob = new Blob(recordedChunks.current, {
-				type: "video/webm",
-			});
-			
-			const formData = new FormData();
-			
-			// formData.append("userId", loggedInUser);
-			// formData.append("username", user.email);
-			// formData.append("submittedAt", new Date().toISOString());
-			// formData.append("answers", JSON.stringify(answers));
-			// formData.append("video", videoBlob, "interview.webm");
-			
-			formData.append("userId", user.id);
-			formData.append("submittedAt", new Date().toISOString());
-			
-			formData.append("interviewStartTime", interviewStartRef.current);
-			const interviewEnd = new Date().toISOString();
-			formData.append("interviewEndTime", interviewEnd);
-			
-			formData.append("totalInterviewTime", INTERVIEW_TIME); // seconds
-			formData.append("timeTaken", elapsedSeconds);
-			
-			formData.append("tabSwitchCount", tabSwitchCountRef.current);
-			
-			formData.append("answers", JSON.stringify(answers));
-			formData.append("video", videoBlob, "interview.webm");
-			
-			await fetch("http://localhost:5000/api/interview/upload", {
-			method: "POST",
-			body: formData,
-		});
-		
-		alert("Interview Submitted Successfully");
-		navigate("/candidate");
-	} catch (err) {
-		console.log(err);
-		alert("Submission Failed");
-	}
-};
+    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("fullscreenchange", handleFullscreen);
 
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("fullscreenchange", handleFullscreen);
+    };
+  }, [started, finishInterview, getCurrentAnswer]);
+
+  // --------------------------------------------------
+  // CLEANUP
+  // --------------------------------------------------
+
+  useEffect(() => {
+    return () => stopMedia();
+  }, [stopMedia]);
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Interview Panel</h2>
+    <div className="interview-panel">
+      <div className="interview-header">
+        <div>
+          <h2>Interview Panel</h2>
+          <p>
+            Candidate: <strong>{user?.id || "N/A"}</strong>
+          </p>
+        </div>
 
-	  <h3>Tab Switch Count: {tabSwitchCount} / 3</h3>
-      <h3>Candidate : {loggedInUser}</h3>
-<h2 style={{ color: timeLeft < 300 ? "red" : "green" }}>
-  Time Left :
-  {String(Math.floor(timeLeft / 60)).padStart(2, "0")}:
-  {String(timeLeft % 60).padStart(2, "0")}
-</h2>
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        width="700"
-        style={{ border: "1px solid black" }}
-      />
+        {started && (
+          <div className={timeLeft <= 10 ? "timer danger" : "timer"}>
+            ⏱️ {timeLeft}s
+          </div>
+        )}
+      </div>
 
-      <br />
-      <br />
+      {!started && (
+        <div className="media-permission-box">
+          <h2>Camera & Microphone Required</h2>
 
-      {!started ? (
-        <button onClick={startInterview}>Start Interview</button>
-      ) : (
-        <>
-          <h2>
-            Question {currentQuestion + 1} / {questions.length}
-          </h2>
+          <p>
+            Before starting the interview, please enable your camera
+            and microphone.
+          </p>
 
-          <h3>{questions[currentQuestion]}</h3>
+          <div className="permission-video-wrapper">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="permission-video"
+            />
 
-          <button onClick={startAnswer} disabled={isRecording}>
-            Start Answer
-          </button>
+            {!mediaReady && (
+              <div className="video-placeholder">
+                <div className="camera-icon">📷</div>
+                <strong>Camera preview</strong>
+                <span>Enable camera to see yourself here</span>
+              </div>
+            )}
+          </div>
 
-          <button
-            onClick={nextQuestion}
-            disabled={!isRecording}
-            style={{ marginLeft: 10 }}
-          >
-            {currentQuestion === questions.length - 1
-              ? "Finish Interview"
-              : "Next Question"}
-          </button>
+          <div className="device-status-container">
+            {["📹 Camera", "🎤 Microphone"].map((device) => (
+              <div
+                key={device}
+                className={
+                  mediaReady
+                    ? "device-status success"
+                    : "device-status warning"
+                }
+              >
+                <span>{device.split(" ")[0]}</span>
 
-          <hr />
+                <div>
+                  <strong>{device.substring(3)}</strong>
+                  <p>{mediaReady ? "Enabled" : "Not enabled"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-          <h3>
-            Recording : {isRecording ? "🎤 Listening..." : "Stopped"}
-          </h3>
+          {mediaError && (
+            <div className="media-error">⚠️ {mediaError}</div>
+          )}
 
-          <h3>Answer</h3>
-          <p>{interimTranscript}</p>
-
-          <h3>Final Transcript</h3>
-          <textarea
-            rows={6}
-            cols={90}
-            value={transcript}
-            readOnly
-          />
-
-          <hr />
-
-          <h2>Answers Submitted</h2>
-
-          {allAnswers.map((item) => (
-            <div
-              key={item.questionNo}
-              style={{
-                border: "1px solid gray",
-                marginBottom: 15,
-                padding: 10,
-              }}
+          {!mediaReady && (
+            <button
+              className="primary-button"
+              onClick={checkMediaPermissions}
+              disabled={checkingMedia}
             >
-              <b>
-                Q{item.questionNo}. {item.question}
-              </b>
+              {checkingMedia
+                ? "Checking Camera & Microphone..."
+                : "Enable Camera & Microphone"}
+            </button>
+          )}
 
-              <p>{item.answer}</p>
+          {mediaReady && (
+            <>
+              <div className="ready-message">
+                <div className="ready-icon">✓</div>
+
+                <div>
+                  <strong>Camera and microphone are ready</strong>
+                  <p>You can now start the interview.</p>
+                </div>
+              </div>
+
+              <button
+                className="primary-button start-button"
+                onClick={startInterview}
+                disabled={isSubmitting}
+              >
+                Start Interview
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {started && (
+        <div className="interview-content">
+          <div className="security-status">
+            Tab Switches: <strong>{tabSwitchCount}</strong> /{" "}
+            {MAX_TAB_SWITCHES}
+          </div>
+
+          <div className="camera-container">
+            <div className="camera-header">
+              <h3>Live Camera</h3>
+
+              {isRecording && (
+                <div className="recording-badge">
+                  <span className="recording-dot" />
+                  RECORDING
+                </div>
+              )}
             </div>
-          ))}
-        </>
+
+            <div className="video-wrapper">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="interview-video"
+              />
+
+              {isRecording && (
+                <div className="live-badge">
+                  <span>●</span> LIVE
+                </div>
+              )}
+            </div>
+
+            <div
+              className={
+                isSpeaking
+                  ? "voice-status speaking"
+                  : "voice-status silent"
+              }
+            >
+              <div className="voice-icon">🎤</div>
+
+              <div className="voice-text">
+                <strong>
+                  {isSpeaking ? "Voice Detected" : "No Voice Detected"}
+                </strong>
+
+                <span>
+                  {isSpeaking
+                    ? "Please remain silent while typing your answer."
+                    : "Microphone is active and monitoring."}
+                </span>
+              </div>
+
+              <div
+                className={
+                  isSpeaking
+                    ? "voice-indicator active"
+                    : "voice-indicator"
+                }
+              >
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          </div>
+
+          <div className="question-section">
+            <div className="question-number">
+              Question {currentQuestion + 1} / {QUESTIONS.length}
+            </div>
+
+            <h2>{QUESTIONS[currentQuestion]}</h2>
+          </div>
+
+          <div className="answer-section">
+            <label>Your Answer</label>
+
+            <textarea
+              rows={10}
+              value={answer}
+              disabled={isSubmitting}
+              placeholder="Type your answer here..."
+              onChange={(e) => {
+                answerRef.current = e.target.value;
+                setAnswer(e.target.value);
+              }}
+            />
+          </div>
+
+          <div className="action-section">
+            <button
+              className="primary-button"
+              onClick={nextQuestion}
+              disabled={isSubmitting}
+            >
+              {currentQuestion === QUESTIONS.length - 1
+                ? "Finish Interview"
+                : "Next Question"}
+            </button>
+          </div>
+
+          {allAnswers.length > 0 && (
+            <div className="submitted-answers">
+              <h3>Completed Answers</h3>
+
+              {allAnswers.map((item) => (
+                <div key={item.questionNo} className="answer-card">
+                  <strong>
+                    Q{item.questionNo}. {item.question}
+                  </strong>
+
+                  <p>{item.answer || "No answer provided."}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -32,7 +32,8 @@ function CandidateHome() {
     codingStatus === "pending";
 
 
-  const canStartInterview = interviewStatus === "scheduled";
+  // const canStartInterview = interviewStatus === "scheduled";
+  const canStartInterview = bitsStatus === "process" && codingStatus === "process" && interviewStatus === "pending";
 
 
 

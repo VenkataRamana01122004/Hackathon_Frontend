@@ -46,6 +46,7 @@ function AssignmentPanel() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [systemInfo, setSystemInfo] = useState({});
   const [submitting, setSubmitting] = useState(false); 
+  const [runningCode, setRunningCode] = useState(false);
 
   const submittedRef = useRef(false);
   const assignmentStartRef = useRef(null);
@@ -675,7 +676,8 @@ function AssignmentPanel() {
 
   const runCode = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/interview/compile", {
+      // const res = await axios.post("http://localhost:5000/api/interview/compile", {
+      const res = await axios.post("http://localhost:2004/api/compiler/run", {
         language,
         code,
         input,
@@ -684,6 +686,9 @@ function AssignmentPanel() {
     } catch (err) {
       setOutput(err.response?.data?.error || err.response?.data?.output || "Compilation Failed");
     }
+    finally {
+    setRunningCode(false);
+  }
   };
 
   // 1. Resume Screen Layout
@@ -864,8 +869,17 @@ function AssignmentPanel() {
               <option value="c">C</option>
               <option value="python">Python</option>
             </select>
-            <button type="button" className="btn btn--secondary" style={{ width: "auto" }} onClick={runCode}>
+            {/* <button type="button" className="btn btn--secondary" style={{ width: "auto" }} onClick={runCode}>
               Run Code
+            </button> */}
+            <button
+              type="button"
+              className="btn btn--secondary"
+              style={{ width: "auto" }}
+              onClick={runCode}
+              disabled={runningCode}
+            >
+              {runningCode ? "Running..." : "Run Code"}
             </button>
             <button
               type="button"
