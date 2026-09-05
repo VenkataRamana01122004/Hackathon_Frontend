@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import QuestionPanel from "./mcq/QuestionPanel.jsx";
 import QuestionGrid from "./mcq/QuestionGrid.jsx";
@@ -47,8 +47,11 @@ export default function BitsAssessment() {
   
   const [fullscreenExits, setFullscreenExits] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
+  const [blurEvents, setBlurEvents] = useState(0);
   const [isBlurred, setIsBlurred] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [securityWarning, setSecurityWarning] = useState("");
+  const [submissionResult, setSubmissionResult] = useState(null);
   const [resumeCount, setResumeCount] = useState(() => parseInt(localStorage.getItem("resume_count") || "0", 10));
 
 
@@ -74,6 +77,14 @@ export default function BitsAssessment() {
   const isFullscreenRef = useRef(false);
   const lastFullscreenExitTimeRef = useRef(0);
   const backgroundApplicationsRef = useRef([]);
+
+  const attachVideoElement = useCallback((element) => {
+    videoRef.current = element;
+    if (element && streamRef.current) {
+      element.srcObject = streamRef.current;
+      element.play().catch(() => {});
+    }
+  }, []);
 
   // Sync state values instantly to their respective refs
   useEffect(() => { examStartedRef.current = examStarted; }, [examStarted]);
@@ -346,6 +357,7 @@ useEffect(() => {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
       }
 
       const options = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
@@ -387,6 +399,11 @@ const handleFullscreenChange = () => {
       if (next >= 3) {
         autoSubmitExam("Maximum fullscreen exits exceeded.");
       } else {
+        setSecurityWarning(
+          next === 2
+            ? "Warning: one fullscreen exit remains before automatic submission."
+            : `Fullscreen exited. ${3 - next} chances remain.`
+        );
         setIsFullscreenViolated(true);
       }
 
@@ -449,6 +466,12 @@ const handleFullscreenChange = () => {
 
       if (next >= 3) {
         autoSubmitExam("Exceeded Max Tab Switch limit.");
+      } else {
+        setSecurityWarning(
+          next === 2
+            ? "Warning: one tab switch remains before automatic submission."
+            : `Tab switch detected. ${3 - next} chances remain.`
+        );
       }
 
       return next;
@@ -456,7 +479,34 @@ const handleFullscreenChange = () => {
   }
 };
 
-    const handleFocusBlur = () => { setIsBlurred(true); logEvent("Focus lost (Blur Event)."); };
+    const removeSecurityListener = window.electronAPI?.onSecurityEvent?.((event) => {
+      if (event.type !== "APPLICATION_SWITCH" || submittingRef.current) return;
+
+      setTabSwitches((current) => {
+        const next = Math.max(current, Number(event.count) || 0);
+        tabSwitchesRef.current = next;
+        localStorage.setItem("tab_switches", String(next));
+        logEvent(`SECURITY ALERT: Application switch detected (#${next})`);
+
+        if (next >= 3) {
+          autoSubmitExam("Exceeded Max Tab Switch limit.");
+        } else {
+          setSecurityWarning(
+            next === 2
+              ? "Warning: one tab switch remains before automatic submission."
+              : `Tab switch detected. ${3 - next} chances remain.`
+          );
+        }
+
+        return next;
+      });
+    });
+
+    const handleFocusBlur = () => {
+      setIsBlurred(true);
+      setBlurEvents(prev => prev + 1);
+      logEvent("Focus lost (Blur Event).");
+    };
     const handleFocusGain = () => { setIsBlurred(false); logEvent("Focus regained (Focus Event)."); };
     const handleOnline = () => { setIsOffline(false); logEvent("Network connection restored."); };
     const handleOffline = () => { setIsOffline(true); logEvent("Network drop connection context lost."); };
@@ -472,6 +522,7 @@ const handleFullscreenChange = () => {
     isFullscreenRef.current = !!document.fullscreenElement;
 
     return () => {
+      removeSecurityListener?.();
       window.removeEventListener('keydown', preventMaliciousKeys);
       document.removeEventListener('visibilitychange', handleVisibility);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -655,6 +706,11 @@ const handleSelectOption = (option) => {
       setQuestions(randomized);
 localStorage.setItem("exam_questions", JSON.stringify(randomized));
 
+const examStartResult = await window.electronAPI?.startExam?.();
+if (examStartResult && !examStartResult.success) {
+  throw new Error(examStartResult.message || "Unable to start the exam.");
+}
+
 setExamStarted(true);
 
 // Wait for React to render the exam screen, then ensure fullscreen
@@ -707,6 +763,10 @@ logEvent("Brand new operational exam profile generated.");
     localStorage.setItem("exam_running", "true");
 
     await document.documentElement.requestFullscreen().catch(() => {});
+    const examStartResult = await window.electronAPI?.startExam?.();
+    if (examStartResult && !examStartResult.success) {
+      throw new Error(examStartResult.message || "Unable to resume the exam.");
+    }
     setExamStarted(true);
     logEvent(`Exam session resumed. Attempt count: ${count}`);
   };
@@ -781,7 +841,36 @@ logEvent("Brand new operational exam profile generated.");
     if (submittingRef.current) return;
 
     submittingRef.current = true;
+    const score = questionsRef.current.reduce(
+      (result, question) => {
+        const expected = Array.isArray(question.correctAnswers)
+          ? question.correctAnswers
+          : question.correctAnswer !== undefined
+            ? [question.correctAnswer]
+            : [];
+        const actualValue = answersRef.current[question.id];
+        const actual = Array.isArray(actualValue)
+          ? actualValue
+          : actualValue === undefined
+            ? []
+            : [actualValue];
+        const correct = expected.length === actual.length &&
+          expected.every((value) => actual.includes(value));
+
+        return {
+          total: result.total + 1,
+          correct: result.correct + (correct ? 1 : 0),
+        };
+      },
+      { total: 0, correct: 0 }
+    );
+    setSubmissionResult({
+      ...score,
+      percentage: score.total ? Math.round((score.correct / score.total) * 100) : 0,
+      reason,
+    });
     setExamFinished(true);
+    await window.electronAPI?.stopExam?.();
 
     logEvent(`Exam ending submission workflow instantiated: ${reason}`);
     localStorage.setItem("exam_submitted", "true");
@@ -819,8 +908,6 @@ logEvent("Brand new operational exam profile generated.");
     user.bitsExamStatus = "Process";
     localStorage.setItem("user", JSON.stringify(user));
 
-    alert(`Exam finished. Result: ${reason}`);
-    navigate("/candidate");
   };
 
   if (examFinished) {
@@ -833,6 +920,12 @@ logEvent("Brand new operational exam profile generated.");
           <p>Candidate: <strong>{CANDIDATE_NAME}</strong></p>
           <p>Username: <code>{CANDIDATE_USERNAME}</code></p>
         </div>
+        <h4 style={{ color: '#2b3a2e' }}>Your Score</h4>
+        <div style={{ fontSize: '36px', fontWeight: '700', color: '#3a5a40' }}>
+          {submissionResult?.correct ?? 0} / {submissionResult?.total ?? totalQs}
+        </div>
+        <p style={{ color: '#588157' }}>{submissionResult?.percentage ?? 0}%</p>
+        <p style={{ color: '#7a2b2b' }}>Submission reason: {submissionResult?.reason}</p>
         <h4 style={{ color: '#2b3a2e' }}>Submission Summary</h4>
         <div style={{ display: 'flex', justifyContent: 'space-around', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #a3b18a', margin: '20px 0' }}>
           <div><strong>{totalQs}</strong><br/><small style={{color:'#9a9a8f'}}>Total Tasks</small></div>
@@ -840,6 +933,9 @@ logEvent("Brand new operational exam profile generated.");
           <div><strong>{totalQs - answeredQs}</strong><br/><small style={{color:'#9a9a8f'}}>Skipped</small></div>
         </div>
         <p style={{ fontSize: '14px', color: '#9a9a8f' }}>Your biometric data, response profile, and security logs are fully synchronized.</p>
+        <button className="btn btn--submit" onClick={() => navigate("/candidate")}>
+          Continue to Candidate Home
+        </button>
       </div>
     );
   }
@@ -975,6 +1071,12 @@ if (!examStarted) {
         </div>
       )}
 
+      {securityWarning && (
+        <div className="app-banner" style={{ marginTop: 16 }}>
+          ⚠️ {securityWarning}
+        </div>
+      )}
+
       <main className="app-main">
         {currentQuestion && (
           <QuestionPanel
@@ -995,7 +1097,7 @@ if (!examStarted) {
         )}
 
         <aside className="app-sidebar">
-          <CamWindow videoRef={videoRef} />
+          <CamWindow videoRef={videoRef} onVideoRef={attachVideoElement} />
           <QuestionGrid
             questions={questions}
             statuses={statuses}
@@ -1008,6 +1110,7 @@ if (!examStarted) {
             total={questions.length}
             tabSwitches={tabSwitches}
             fullscreenExits={fullscreenExits}
+            blurEvents={blurEvents}
           />
         </aside>
       </main>

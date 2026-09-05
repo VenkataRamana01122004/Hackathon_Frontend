@@ -1,6 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
+import { getProgress } from "./utils/progress.js";
+
+const normalizeStatus = (value) => String(value || "pending").trim().toLowerCase();
+
+const isCompletedStatus = (status) =>
+  ["process", "passed", "completed", "submitted", "qualified"].includes(status);
+
+const displayStatus = (status, completed) =>
+  completed ? "COMPLETED" : status.toUpperCase();
 
 function CandidateHome() {
 
@@ -10,30 +19,30 @@ function CandidateHome() {
 
 
   // Normalize status values
-  const bitsStatus =
-    (user.bitsExamStatus || "Pending").trim().toLowerCase();
+  const progress = getProgress();
+  const bitsStatus = normalizeStatus(user.bitsExamStatus);
 
-  const codingStatus =
-    (user.codingExamStatus || "Pending").trim().toLowerCase();
+  const codingStatus = normalizeStatus(user.codingExamStatus);
 
-  const interviewStatus =
-    (user.interviewStatus || "Pending").trim().toLowerCase();
+  const interviewStatus = normalizeStatus(user.interviewStatus);
 
 
 
   // Round permissions
 
-  const canStartMcq =
-    bitsStatus === "pending";
+  const mcqCompleted = isCompletedStatus(bitsStatus) || progress.mcq.completed;
+  const codingCompleted = isCompletedStatus(codingStatus) || progress.coding.completed;
+  const interviewCompleted = isCompletedStatus(interviewStatus);
+
+  const canStartMcq = !mcqCompleted;
 
 
   const canStartCoding =
-    bitsStatus === "process" &&
-    codingStatus === "pending";
+    mcqCompleted && !codingCompleted;
 
 
   // const canStartInterview = interviewStatus === "scheduled";
-  const canStartInterview = bitsStatus === "process" && codingStatus === "process" && interviewStatus === "pending";
+  const canStartInterview = mcqCompleted && codingCompleted && !interviewCompleted;
 
 
 
@@ -88,7 +97,7 @@ function CandidateHome() {
 
 
             <span className="round-status round-status--pending">
-              {bitsStatus.toUpperCase()}
+              {displayStatus(bitsStatus, mcqCompleted)}
             </span>
 
 
@@ -142,7 +151,7 @@ function CandidateHome() {
         <div
 
           className={`round-card ${
-            canStartCoding
+            codingCompleted || canStartCoding
               ? "round-card--unlocked"
               : "round-card--locked"
           }`}
@@ -160,7 +169,7 @@ function CandidateHome() {
 
             <span className="round-status">
 
-              {codingStatus.toUpperCase()}
+              {displayStatus(codingStatus, codingCompleted)}
 
             </span>
 
@@ -188,7 +197,7 @@ function CandidateHome() {
 
           </p>
 
-          {!canStartCoding && (
+          {!canStartCoding && !codingCompleted && (
 
             <div className="round-requirements">
 
@@ -210,7 +219,9 @@ function CandidateHome() {
 
           >
 
-            {canStartCoding
+              {codingCompleted
+              ? "Completed"
+              : canStartCoding
               ? "Start Test"
               : "Locked"}
 
@@ -222,7 +233,7 @@ function CandidateHome() {
         <div
 
           className={`round-card ${
-            canStartInterview
+            interviewCompleted || canStartInterview
               ? "round-card--unlocked"
               : "round-card--locked"
           }`}
@@ -244,7 +255,7 @@ function CandidateHome() {
 
             <span className="round-status">
 
-              {interviewStatus.toUpperCase()}
+              {displayStatus(interviewStatus, interviewCompleted)}
 
             </span>
 
@@ -281,7 +292,7 @@ function CandidateHome() {
 
 
 
-          {!canStartInterview && (
+          {!canStartInterview && !interviewCompleted && (
 
             <div className="round-requirements">
 
@@ -302,7 +313,9 @@ function CandidateHome() {
             }
 
           >
-            {canStartInterview
+            {interviewCompleted
+              ? "Completed"
+              : canStartInterview
               ? "Start Interview"
               : "Locked"}
 

@@ -3,7 +3,7 @@
 // exactly as before. This just wraps the existing <video ref={videoRef}>
 // element in the themed docked-camera look.
 
-export default function CamWindow({ videoRef }) {
+export default function CamWindow({ videoRef, onVideoRef }) {
   return (
     <div className="cam-window">
       <div className="cam-header">
@@ -11,7 +11,13 @@ export default function CamWindow({ videoRef }) {
         Biometric Stream
       </div>
       <div className="cam-frame">
-        <video ref={videoRef} autoPlay muted playsInline style={{ transform: "scaleX(-1)" }} />
+        <video
+          ref={onVideoRef || videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{ transform: "scaleX(-1)" }}
+        />
       </div>
     </div>
   );

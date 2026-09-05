@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProblemPanel from "./coding/ProblemPanel.jsx";
@@ -81,6 +81,14 @@ function AssignmentPanel() {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const videoPreviewRef = useRef(null);
+
+  const attachVideoElement = useCallback((element) => {
+    videoPreviewRef.current = element;
+    if (element && mediaStreamRef.current) {
+      element.srcObject = mediaStreamRef.current;
+      element.play().catch(() => {});
+    }
+  }, []);
 
   const [metrics, setMetrics] = useState({
     tabSwitches: tabSwitchCountRef.current,
@@ -190,6 +198,7 @@ function AssignmentPanel() {
       mediaStreamRef.current = stream;
       if (videoPreviewRef.current) {
         videoPreviewRef.current.srcObject = stream;
+        await videoPreviewRef.current.play().catch(() => {});
       }
 
       const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -230,6 +239,7 @@ function AssignmentPanel() {
     if (submittedRef.current || submitting) return;
     submittedRef.current = true;
     setSubmitting(true);
+    await window.electronAPI?.stopExam?.();
 
     try {
       if (document.fullscreenElement) {
@@ -414,6 +424,21 @@ function AssignmentPanel() {
       syncMetrics();
     };
 
+    const removeSecurityListener = window.electronAPI?.onSecurityEvent?.((event) => {
+      if (event.type !== "APPLICATION_SWITCH" || submittedRef.current) return;
+
+      tabSwitchCountRef.current = Math.max(
+        tabSwitchCountRef.current,
+        Number(event.count) || 0
+      );
+      localStorage.setItem("assignment_tab_switches", tabSwitchCountRef.current);
+      syncMetrics();
+
+      if (tabSwitchCountRef.current >= 3) {
+        submitCode("tab");
+      }
+    });
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -507,6 +532,7 @@ function AssignmentPanel() {
     }, 1000);
 
     return () => {
+      removeSecurityListener?.();
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("online", handleOnline);
@@ -571,6 +597,11 @@ function AssignmentPanel() {
       console.log("Fullscreen request initialization skipped:", err);
     }
 
+    const examStartResult = await window.electronAPI?.startExam?.();
+    if (examStartResult && !examStartResult.success) {
+      throw new Error(examStartResult.message || "Unable to start the exam.");
+    }
+
     setStarted(true);
     setTimeout(async () => {
       if (!document.fullscreenElement) {
@@ -621,6 +652,11 @@ function AssignmentPanel() {
       await document.documentElement.requestFullscreen();
     } catch (err) {
       console.log("Fullscreen request initialization skipped:", err);
+    }
+
+    const examStartResult = await window.electronAPI?.startExam?.();
+    if (examStartResult && !examStartResult.success) {
+      throw new Error(examStartResult.message || "Unable to resume the exam.");
     }
 
     assignmentStartRef.current = localStorage.getItem("assignment_start");
@@ -902,7 +938,10 @@ function AssignmentPanel() {
         </section>
       </main>
 
-      <DraggableCamWindow videoRef={videoPreviewRef} />
+      <DraggableCamWindow
+        videoRef={videoPreviewRef}
+        onVideoRef={attachVideoElement}
+      />
 
       <div className="security-panel" style={{ margin: "0 28px 24px" }}>
         <h5>Proctoring Metrics (Active Diagnostics)</h5>

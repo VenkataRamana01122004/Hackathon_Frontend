@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../candidate/candidate.css";
 
 function Login({ onLogin }) {
   const navigate = useNavigate();
@@ -9,8 +10,11 @@ function Login({ onLogin }) {
     email: "",
     password: ""
   });
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
+    setError("");
     setData({
       ...data,
       [e.target.name]: e.target.value
@@ -19,11 +23,20 @@ function Login({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    if (!data.email.trim() || !data.password) {
+      setError("Enter your email and password.");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const res = await axios.post(
         "http://localhost:5000/api/auth/login",
-        data
+        data,
+        { timeout: 10000 }
       );
 
       // store user
@@ -45,32 +58,59 @@ function Login({ onLogin }) {
         navigate("/candidate", { replace: true });
       } 
       else {
-        alert("Unknown role");
+        setError("Your account does not have a supported role.");
       }
 
     } catch (err) {
-      alert("Invalid Login");
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        setError("Invalid email or password.");
+      } else if (err.code === "ECONNABORTED") {
+        setError("Login timed out. Make sure the backend and database are running.");
+      } else {
+        setError("Unable to connect to the login service. Please try again.");
+      }
       console.log(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        name="email"
-        onChange={handleChange}
-        placeholder="Email"
-      />
+    <div className="login-shell">
+      <form className="login-card login-form" onSubmit={handleSubmit} noValidate>
+        <h1 className="login-title">Sign In</h1>
+        <p className="login-subtitle">Access your assessment workspace</p>
+        <label className="login-label" htmlFor="login-email">Email</label>
+        <input
+          id="login-email"
+          name="email"
+          type="email"
+          value={data.email}
+          onChange={handleChange}
+          placeholder="Email"
+          autoComplete="username"
+          disabled={isSubmitting}
+        />
 
-      <input
-        type="password"
-        name="password"
-        onChange={handleChange}
-        placeholder="Password"
-      />
+        <label className="login-label" htmlFor="login-password">Password</label>
+        <input
+          id="login-password"
+          type="password"
+          name="password"
+          value={data.password}
+          onChange={handleChange}
+          placeholder="Password"
+          autoComplete="current-password"
+          disabled={isSubmitting}
+        />
 
-      <button type="submit">Login</button>
-    </form>
+        {error && <p className="login-error" role="alert">{error}</p>}
+
+        <button className="btn btn--submit login-submit" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in..." : "Login"}
+        </button>
+      </form>
+    </div>
   );
 }
 

@@ -32,6 +32,7 @@ function InterviewPanel() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
 
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null);
@@ -150,13 +151,14 @@ function InterviewPanel() {
   // VOICE DETECTION
   // --------------------------------------------------
 
-  const startVoiceDetection = useCallback((stream) => {
+  const startVoiceDetection = useCallback(async (stream) => {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
 
       if (!AudioContext) return;
 
       const audioContext = new AudioContext();
+      await audioContext.resume();
       const analyser = audioContext.createAnalyser();
 
       analyser.fftSize = 2048;
@@ -169,7 +171,7 @@ function InterviewPanel() {
       analyserRef.current = analyser;
 
       const data = new Uint8Array(analyser.fftSize);
-      const THRESHOLD = 0.08;
+      const THRESHOLD = 0.04;
 
       const detect = () => {
         if (!analyserRef.current || submittedRef.current) return;
@@ -268,7 +270,13 @@ function InterviewPanel() {
   }, []);
 
   const saveCurrentAnswer = () => {
-    const updated = [...answersRef.current, getCurrentAnswer()];
+    const current = getCurrentAnswer();
+    const updated = [
+      ...answersRef.current.filter(
+        (item) => item.questionNo !== current.questionNo
+      ),
+      current,
+    ].sort((left, right) => left.questionNo - right.questionNo);
 
     answersRef.current = updated;
     setAllAnswers(updated);
@@ -286,6 +294,7 @@ function InterviewPanel() {
 
       submittedRef.current = true;
       setIsSubmitting(true);
+      await window.electronAPI?.stopExam?.();
 
       try {
         const endTime = new Date().toISOString();
@@ -333,7 +342,14 @@ function InterviewPanel() {
         });
 
         if (!response.ok) {
-          throw new Error("Video upload failed.");
+          let message = "Interview submission failed.";
+          try {
+            const payload = await response.json();
+            message = payload.message || message;
+          } catch {
+            // Keep the generic message when the server does not return JSON.
+          }
+          throw new Error(message);
         }
 
         const updatedUser = JSON.parse(
@@ -352,7 +368,7 @@ function InterviewPanel() {
         submittedRef.current = false;
         setIsSubmitting(false);
 
-        alert("Interview submission failed.");
+        setSubmissionError(error.message || "Interview submission failed.");
       }
     },
     [
@@ -375,6 +391,7 @@ function InterviewPanel() {
     }
 
     try {
+      setSubmissionError("");
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
@@ -385,10 +402,15 @@ function InterviewPanel() {
         throw new Error("Camera/microphone stream is unavailable.");
       }
 
-      startVoiceDetection(stream);
+      await startVoiceDetection(stream);
 
       if (!startRecording(stream)) {
         throw new Error("Unable to start video recording.");
+      }
+
+      const examStartResult = await window.electronAPI?.startExam?.();
+      if (examStartResult && !examStartResult.success) {
+        throw new Error(examStartResult.message || "Unable to start the exam.");
       }
 
       interviewStartRef.current = new Date().toISOString();
@@ -407,6 +429,8 @@ function InterviewPanel() {
   // --------------------------------------------------
 
   const nextQuestion = () => {
+    if (submittedRef.current || isSubmitting) return;
+
     const updatedAnswers = saveCurrentAnswer();
 
     if (questionRef.current < QUESTIONS.length - 1) {
@@ -694,6 +718,7 @@ function InterviewPanel() {
             <label>Your Answer</label>
 
             <textarea
+              autoFocus
               rows={10}
               value={answer}
               disabled={isSubmitting}
@@ -716,6 +741,12 @@ function InterviewPanel() {
                 : "Next Question"}
             </button>
           </div>
+
+          {submissionError && (
+            <div className="media-error" role="alert">
+              {submissionError}
+            </div>
+          )}
 
           {allAnswers.length > 0 && (
             <div className="submitted-answers">

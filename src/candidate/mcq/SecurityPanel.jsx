@@ -1,4 +1,4 @@
-export default function SecurityPanel({ answeredCount, markedCount, total, tabSwitches, fullscreenExits }) {
+export default function SecurityPanel({ answeredCount, markedCount, total, tabSwitches, fullscreenExits, blurEvents }) {
   const hasViolations = tabSwitches > 0 || fullscreenExits > 0;
   return (
     <div className="security-panel">
@@ -11,6 +11,9 @@ export default function SecurityPanel({ answeredCount, markedCount, total, tabSw
       </div>
       <div className={`security-row ${hasViolations ? "security-row--alert" : ""}`}>
         <span>Fullscreen exits</span><strong>{fullscreenExits} / 3</strong>
+      </div>
+      <div className="security-row">
+        <span>Blur events</span><strong>{blurEvents}</strong>
       </div>
     </div>
   );

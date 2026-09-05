@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 const WIDTH = 220;
 const HEADER_HEIGHT = 34;
 
-export default function DraggableCamWindow({ videoRef }) {
+export default function DraggableCamWindow({ videoRef, onVideoRef }) {
   const [pos, setPos] = useState(() => ({
     x: typeof window !== "undefined" ? window.innerWidth - WIDTH - 32 : 40,
     y: 90,
@@ -62,7 +62,13 @@ export default function DraggableCamWindow({ videoRef }) {
       </div>
       {!minimized && (
         <div className="cam-float-frame">
-          <video ref={videoRef} autoPlay muted playsInline style={{ transform: "scaleX(-1)" }} />
+          <video
+            ref={onVideoRef || videoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ transform: "scaleX(-1)" }}
+          />
         </div>
       )}
     </div>
