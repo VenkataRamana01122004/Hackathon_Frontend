@@ -1,10 +1,14 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../candidate/candidate.css";
 
 function Login({ onLogin }) {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.electronAPI?.showExitApp?.();
+  }, []);
 
   const [data, setData] = useState({
     email: "",

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
+import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 
 const QUESTIONS = [
   "Tell me about yourself.",
@@ -50,6 +51,7 @@ function InterviewPanel() {
 
   const submittedRef = useRef(false);
   const interviewStartRef = useRef(null);
+  const cameraCovered = useCameraCoverageWarning(videoRef, started && !isSubmitting);
 
   // --------------------------------------------------
   // MEDIA
@@ -669,6 +671,12 @@ function InterviewPanel() {
                 </div>
               )}
             </div>
+
+            {cameraCovered && (
+              <div className="media-error" role="alert">
+                ⚠️ Camera view appears covered or too dark. Please uncover the camera.
+              </div>
+            )}
 
             <div
               className={

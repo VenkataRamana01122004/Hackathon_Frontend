@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import CandidateNavBar from "./CandidateNavBar";
 import CandidateHome from './CandidateHome';
 import InterviewPanel from "./InterviewPanel";
@@ -6,8 +7,12 @@ import AssignmentPanel from './AssignmentPanel';
 import BitsAssessment from "./BitsAssessment";
 // import SubmissionForm from "./SubmissionForm";
 
-const CandidateLayout = ({ logout }) => (
-  <>
+const CandidateLayout = ({ logout }) => {
+  useEffect(() => {
+    window.electronAPI?.hideExitApp?.();
+  }, []);
+
+  return <>
     <CandidateNavBar logout={logout} />
 
     <Routes>
@@ -20,7 +25,7 @@ const CandidateLayout = ({ logout }) => (
 
       <Route path="*" element={<Navigate to="/candidate" replace />} />
     </Routes>
-  </>
-);
+  </>;
+};
 
 export default CandidateLayout;

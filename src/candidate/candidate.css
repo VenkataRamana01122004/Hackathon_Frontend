@@ -525,6 +525,31 @@ main, .page-shell {
   align-items: flex-start;
 }
 
+@media (min-width: 981px) {
+  .app-shell {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-main {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .question-window,
+  .problem-panel,
+  .editor-panel {
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+  }
+
+  .app-sidebar {
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 980px) {
   .app-main { flex-direction: column; }
 }

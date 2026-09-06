@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import QuestionPanel from "./mcq/QuestionPanel.jsx";
 import QuestionGrid from "./mcq/QuestionGrid.jsx";
 import CamWindow from "./mcq/CamWindow.jsx";
 import SecurityPanel from "./mcq/SecurityPanel.jsx";
+import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 // import { hasSubmittedProfile } from "./utils/profile.js";
 import axios from "axios";
 import "./candidate.css";
@@ -19,6 +20,7 @@ const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
 export default function BitsAssessment() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Safe User Parsing Helper
   const getUser = () => {
@@ -36,7 +38,7 @@ export default function BitsAssessment() {
   // --- STATE ---
   const [loading, setLoading] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
-  const [examFinished, setExamFinished] = useState(false); 
+  const [examFinished, setExamFinished] = useState(() => location.search === "?view=result");
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -51,7 +53,16 @@ export default function BitsAssessment() {
   const [isBlurred, setIsBlurred] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [securityWarning, setSecurityWarning] = useState("");
-  const [submissionResult, setSubmissionResult] = useState(null);
+  const [submissionResult, setSubmissionResult] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("mcq_result") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const [submittedQuestionTotal, setSubmittedQuestionTotal] = useState(0);
+  const [cameraViolations, setCameraViolations] = useState(0);
+  const [cameraWarningSeconds, setCameraWarningSeconds] = useState(0);
   const [resumeCount, setResumeCount] = useState(() => parseInt(localStorage.getItem("resume_count") || "0", 10));
 
 
@@ -59,6 +70,7 @@ export default function BitsAssessment() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
+  const cameraCovered = useCameraCoverageWarning(videoRef, examStarted && !examFinished);
 
   // --- ALL REFS (Eradicates stale closures in async intervals/listeners) ---
   const questionsRef = useRef(questions);
@@ -77,6 +89,11 @@ export default function BitsAssessment() {
   const isFullscreenRef = useRef(false);
   const lastFullscreenExitTimeRef = useRef(0);
   const backgroundApplicationsRef = useRef([]);
+  const cameraCoveredRef = useRef(false);
+  const cameraViolationActiveRef = useRef(false);
+  const cameraViolationCountRef = useRef(0);
+  const cameraWarningTimerRef = useRef(null);
+  const lastTabSwitchAtRef = useRef(0);
 
   const attachVideoElement = useCallback((element) => {
     videoRef.current = element;
@@ -85,6 +102,10 @@ export default function BitsAssessment() {
       element.play().catch(() => {});
     }
   }, []);
+
+  useEffect(() => {
+    cameraCoveredRef.current = cameraCovered;
+  }, [cameraCovered]);
 
   // Sync state values instantly to their respective refs
   useEffect(() => { examStartedRef.current = examStarted; }, [examStarted]);
@@ -117,7 +138,9 @@ useEffect(() => {
   const savedTabSwitches = localStorage.getItem("tab_switches");
 
   if (savedQuestions) {
-    setQuestions(JSON.parse(savedQuestions));
+    const restoredQuestions = JSON.parse(savedQuestions);
+    questionsRef.current = restoredQuestions;
+    setQuestions(restoredQuestions);
   }
 
   if (savedAnswers) {
@@ -454,39 +477,16 @@ const handleFullscreenChange = () => {
       }
     };
 
-    const handleVisibility = () => {
-  if (document.hidden) {
-    setTabSwitches(prev => {
-      const next = prev + 1;
-
-      tabSwitchesRef.current = next;
-      localStorage.setItem("tab_switches", String(next));
-
-      logEvent(`SECURITY ALERT: Tab switch detected (#${next})`);
-
-      if (next >= 3) {
-        autoSubmitExam("Exceeded Max Tab Switch limit.");
-      } else {
-        setSecurityWarning(
-          next === 2
-            ? "Warning: one tab switch remains before automatic submission."
-            : `Tab switch detected. ${3 - next} chances remain.`
-        );
-      }
-
-      return next;
-    });
-  }
-};
-
-    const removeSecurityListener = window.electronAPI?.onSecurityEvent?.((event) => {
-      if (event.type !== "APPLICATION_SWITCH" || submittingRef.current) return;
+    const recordTabSwitch = () => {
+      const now = Date.now();
+      if (now - lastTabSwitchAtRef.current < 750) return;
+      lastTabSwitchAtRef.current = now;
 
       setTabSwitches((current) => {
-        const next = Math.max(current, Number(event.count) || 0);
+        const next = current + 1;
         tabSwitchesRef.current = next;
         localStorage.setItem("tab_switches", String(next));
-        logEvent(`SECURITY ALERT: Application switch detected (#${next})`);
+        logEvent(`SECURITY ALERT: Tab switch detected (#${next})`);
 
         if (next >= 3) {
           autoSubmitExam("Exceeded Max Tab Switch limit.");
@@ -500,6 +500,16 @@ const handleFullscreenChange = () => {
 
         return next;
       });
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) recordTabSwitch();
+    };
+
+    const removeSecurityListener = window.electronAPI?.onSecurityEvent?.((event) => {
+      if (event.type !== "APPLICATION_SWITCH" || submittingRef.current) return;
+
+      recordTabSwitch();
     });
 
     const handleFocusBlur = () => {
@@ -670,6 +680,7 @@ const handleSelectOption = (option) => {
 
       // 3. Clear out old exam states
       localStorage.removeItem("exam_submitted");
+      localStorage.removeItem("mcq_result");
       localStorage.removeItem("resume_count");
       localStorage.removeItem("exam_answers");
       localStorage.removeItem("exam_statuses");
@@ -704,6 +715,7 @@ const handleSelectOption = (option) => {
 
       
       setQuestions(randomized);
+      questionsRef.current = randomized;
 localStorage.setItem("exam_questions", JSON.stringify(randomized));
 
 const examStartResult = await window.electronAPI?.startExam?.();
@@ -758,6 +770,7 @@ logEvent("Brand new operational exam profile generated.");
     setAnswers(savedAnswers);
     setStatuses(savedStatuses);
     setQuestions(savedQuestions);
+    questionsRef.current = savedQuestions;
     setTimeLeft(savedTime);
 
     localStorage.setItem("exam_running", "true");
@@ -841,6 +854,8 @@ logEvent("Brand new operational exam profile generated.");
     if (submittingRef.current) return;
 
     submittingRef.current = true;
+    const submittedTotal = questionsRef.current.length || questions.length;
+    setSubmittedQuestionTotal(submittedTotal);
     const score = questionsRef.current.reduce(
       (result, question) => {
         const expected = Array.isArray(question.correctAnswers)
@@ -866,9 +881,16 @@ logEvent("Brand new operational exam profile generated.");
     );
     setSubmissionResult({
       ...score,
-      percentage: score.total ? Math.round((score.correct / score.total) * 100) : 0,
+      total: submittedTotal,
+      percentage: submittedTotal ? Math.round((score.correct / submittedTotal) * 100) : 0,
       reason,
     });
+    localStorage.setItem("mcq_result", JSON.stringify({
+      ...score,
+      total: submittedTotal,
+      percentage: submittedTotal ? Math.round((score.correct / submittedTotal) * 100) : 0,
+      reason,
+    }));
     setExamFinished(true);
     await window.electronAPI?.stopExam?.();
 
@@ -910,8 +932,48 @@ logEvent("Brand new operational exam profile generated.");
 
   };
 
+  useEffect(() => {
+    if (!examStarted || examFinished || !cameraCovered) {
+      cameraViolationActiveRef.current = false;
+      if (cameraWarningTimerRef.current) {
+        clearInterval(cameraWarningTimerRef.current);
+        cameraWarningTimerRef.current = null;
+      }
+      setCameraWarningSeconds(0);
+      return undefined;
+    }
+
+    if (cameraViolationActiveRef.current || submittingRef.current) return undefined;
+
+    cameraViolationActiveRef.current = true;
+    cameraViolationCountRef.current += 1;
+    const violationNumber = cameraViolationCountRef.current;
+    setCameraViolations(violationNumber);
+    setCameraWarningSeconds(10);
+    cameraWarningTimerRef.current = setInterval(() => {
+      setCameraWarningSeconds((seconds) => {
+        if (seconds <= 1) {
+          clearInterval(cameraWarningTimerRef.current);
+          cameraWarningTimerRef.current = null;
+          if (cameraCoveredRef.current && !submittingRef.current) {
+            autoSubmitExam("Camera remained covered for 10 seconds.");
+          }
+          return 0;
+        }
+        return seconds - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (cameraWarningTimerRef.current) {
+        clearInterval(cameraWarningTimerRef.current);
+        cameraWarningTimerRef.current = null;
+      }
+    };
+  }, [cameraCovered, examStarted, examFinished]);
+
   if (examFinished) {
-    const totalQs = questions.length;
+    const totalQs = submittedQuestionTotal || questions.length;
     const answeredQs = Object.keys(answers).length;
     return (
       <div style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '600px', margin: '40px auto', border: '1px solid #a3b18a', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', background: '#f2f7ee' }}>
@@ -1077,6 +1139,12 @@ if (!examStarted) {
         </div>
       )}
 
+      {cameraCovered && (
+        <div className="app-banner" style={{ marginTop: 16, background: "#fee2e2", borderColor: "#dc2626", color: "#991b1b" }} role="alert">
+          ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
+        </div>
+      )}
+
       <main className="app-main">
         {currentQuestion && (
           <QuestionPanel
@@ -1111,6 +1179,9 @@ if (!examStarted) {
             tabSwitches={tabSwitches}
             fullscreenExits={fullscreenExits}
             blurEvents={blurEvents}
+            cameraCovered={cameraCovered}
+            cameraViolations={cameraViolations}
+            cameraWarningSeconds={cameraWarningSeconds}
           />
         </aside>
       </main>

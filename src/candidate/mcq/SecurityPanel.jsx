@@ -1,4 +1,4 @@
-export default function SecurityPanel({ answeredCount, markedCount, total, tabSwitches, fullscreenExits, blurEvents }) {
+export default function SecurityPanel({ answeredCount, markedCount, total, tabSwitches, fullscreenExits, blurEvents, cameraCovered, cameraViolations, cameraWarningSeconds }) {
   const hasViolations = tabSwitches > 0 || fullscreenExits > 0;
   return (
     <div className="security-panel">
@@ -15,6 +15,14 @@ export default function SecurityPanel({ answeredCount, markedCount, total, tabSw
       <div className="security-row">
         <span>Blur events</span><strong>{blurEvents}</strong>
       </div>
+      <div className={`security-row ${cameraViolations > 0 ? "security-row--alert" : ""}`}>
+        <span>Camera covered</span><strong>{cameraViolations} / 3</strong>
+      </div>
+      {cameraViolations > 0 && (
+        <div className="security-row security-row--alert">
+          <span>Camera attempts left</span><strong>{Math.max(0, 3 - cameraViolations)}</strong>
+        </div>
+      )}
     </div>
   );
 }

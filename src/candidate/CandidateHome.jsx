@@ -25,6 +25,7 @@ function CandidateHome() {
   const codingStatus = normalizeStatus(user.codingExamStatus);
 
   const interviewStatus = normalizeStatus(user.interviewStatus);
+  const hasMcqResult = Boolean(localStorage.getItem("mcq_result"));
 
 
 
@@ -121,15 +122,17 @@ function CandidateHome() {
 
             className="btn btn--submit round-btn"
 
-            disabled={!canStartMcq}
+            disabled={!canStartMcq && !hasMcqResult}
 
-            onClick={() =>
-              navigate("/candidate/bitsassessment")
-            }
+            onClick={() => navigate(
+              hasMcqResult ? "/candidate/bitsassessment?view=result" : "/candidate/bitsassessment"
+            )}
 
           >
 
-            {canStartMcq
+            {hasMcqResult
+              ? "View Result"
+              : canStartMcq
               ? "Start Test"
               : "Completed"}
 

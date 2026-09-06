@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ProblemPanel from "./coding/ProblemPanel.jsx";
 import DraggableCamWindow from "./coding/DraggableCamWindow.jsx";
 import { getProgress, getRoundLocks, recordCodingResult } from "./utils/progress.js";
+import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 import "./candidate.css";
 
 const ASSIGNMENT_DURATION_SECONDS = 300; 
@@ -47,6 +48,9 @@ function AssignmentPanel() {
   const [systemInfo, setSystemInfo] = useState({});
   const [submitting, setSubmitting] = useState(false); 
   const [runningCode, setRunningCode] = useState(false);
+  const [securityWarning, setSecurityWarning] = useState("");
+  const [cameraViolations, setCameraViolations] = useState(0);
+  const [cameraWarningSeconds, setCameraWarningSeconds] = useState(0);
 
   const submittedRef = useRef(false);
   const assignmentStartRef = useRef(null);
@@ -81,6 +85,15 @@ function AssignmentPanel() {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const videoPreviewRef = useRef(null);
+  const cameraCovered = useCameraCoverageWarning(videoPreviewRef, started && !submitting);
+  const cameraCoveredRef = useRef(false);
+  const cameraViolationActiveRef = useRef(false);
+  const cameraViolationCountRef = useRef(0);
+  const cameraWarningTimerRef = useRef(null);
+
+  useEffect(() => {
+    cameraCoveredRef.current = cameraCovered;
+  }, [cameraCovered]);
 
   const attachVideoElement = useCallback((element) => {
     videoPreviewRef.current = element;
@@ -365,6 +378,46 @@ function AssignmentPanel() {
     }
   };
 
+  useEffect(() => {
+    if (!started || submitting || !cameraCovered) {
+      cameraViolationActiveRef.current = false;
+      if (cameraWarningTimerRef.current) {
+        clearInterval(cameraWarningTimerRef.current);
+        cameraWarningTimerRef.current = null;
+      }
+      setCameraWarningSeconds(0);
+      return undefined;
+    }
+
+    if (cameraViolationActiveRef.current || submittedRef.current) return undefined;
+
+    cameraViolationActiveRef.current = true;
+    cameraViolationCountRef.current += 1;
+    const violationNumber = cameraViolationCountRef.current;
+    setCameraViolations(violationNumber);
+    setCameraWarningSeconds(10);
+    cameraWarningTimerRef.current = setInterval(() => {
+      setCameraWarningSeconds((seconds) => {
+        if (seconds <= 1) {
+          clearInterval(cameraWarningTimerRef.current);
+          cameraWarningTimerRef.current = null;
+          if (cameraCoveredRef.current && !submittedRef.current) {
+            submitCode("camera");
+          }
+          return 0;
+        }
+        return seconds - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (cameraWarningTimerRef.current) {
+        clearInterval(cameraWarningTimerRef.current);
+        cameraWarningTimerRef.current = null;
+      }
+    };
+  }, [cameraCovered, started, submitting]);
+
   const handleFullscreenChange = () => {
     if (!started || submittedRef.current) return;
 
@@ -378,6 +431,11 @@ function AssignmentPanel() {
         return;
       }
 
+      setSecurityWarning(
+        fullscreenExitCountRef.current === 2
+          ? "Warning: one fullscreen exit remains before automatic submission."
+          : `Fullscreen exited. ${3 - fullscreenExitCountRef.current} chances remain.`
+      );
       setIsFullscreenViolated(true);
     }
   };
@@ -436,6 +494,12 @@ function AssignmentPanel() {
 
       if (tabSwitchCountRef.current >= 3) {
         submitCode("tab");
+      } else {
+        setSecurityWarning(
+          tabSwitchCountRef.current === 2
+            ? "Warning: one tab switch remains before automatic submission."
+            : `Tab switch detected. ${3 - tabSwitchCountRef.current} chances remain.`
+        );
       }
     });
 
@@ -867,6 +931,12 @@ function AssignmentPanel() {
         </div>
       )}
 
+      {securityWarning && (
+        <div className="app-banner" style={{ marginTop: 16, background: securityWarning.startsWith("Camera") ? "#fee2e2" : undefined, borderColor: securityWarning.startsWith("Camera") ? "#dc2626" : undefined, color: securityWarning.startsWith("Camera") ? "#991b1b" : undefined }} role="alert">
+          ⚠️ {securityWarning}
+        </div>
+      )}
+
       {questions.length > 0 && (
         <div className="question-picker" style={{ margin: "16px 28px 0" }}>
           {questions.map((q, index) => (
@@ -942,6 +1012,12 @@ function AssignmentPanel() {
         videoRef={videoPreviewRef}
         onVideoRef={attachVideoElement}
       />
+
+      {cameraCovered && (
+        <div className="app-banner" style={{ margin: "12px 28px", background: "#fee2e2", borderColor: "#dc2626", color: "#991b1b" }} role="alert">
+          ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
+        </div>
+      )}
 
       <div className="security-panel" style={{ margin: "0 28px 24px" }}>
         <h5>Proctoring Metrics (Active Diagnostics)</h5>
