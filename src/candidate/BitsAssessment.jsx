@@ -514,8 +514,8 @@ const handleFullscreenChange = () => {
 
     const handleFocusBlur = () => {
       setIsBlurred(true);
-      setBlurEvents(prev => prev + 1);
-      logEvent("Focus lost (Blur Event).");
+      recordTabSwitch();
+      logEvent("Focus lost (tab/application switch detected).");
     };
     const handleFocusGain = () => { setIsBlurred(false); logEvent("Focus regained (Focus Event)."); };
     const handleOnline = () => { setIsOffline(false); logEvent("Network connection restored."); };

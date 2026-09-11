@@ -7,7 +7,12 @@ function Login({ onLogin }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.electronAPI?.showExitApp?.();
+    const exitAllowed = sessionStorage.getItem("exit_application_allowed") !== "false";
+    if (exitAllowed) {
+      window.electronAPI?.showExitApp?.();
+    } else {
+      window.electronAPI?.hideExitApp?.();
+    }
   }, []);
 
   const [data, setData] = useState({

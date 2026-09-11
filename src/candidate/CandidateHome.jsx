@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
-import { getProgress } from "./utils/progress.js";
 
 const normalizeStatus = (value) => String(value || "pending").trim().toLowerCase();
 
@@ -18,23 +17,43 @@ function CandidateHome() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
 
-  // Normalize status values
-  const progress = getProgress();
   const bitsStatus = normalizeStatus(user.bitsExamStatus);
 
   const codingStatus = normalizeStatus(user.codingExamStatus);
 
   const interviewStatus = normalizeStatus(user.interviewStatus);
-  const hasMcqResult = Boolean(localStorage.getItem("mcq_result"));
+  const mcqCompleted = isCompletedStatus(bitsStatus);
+  const codingCompleted = isCompletedStatus(codingStatus);
+  const interviewCompleted = isCompletedStatus(interviewStatus);
+  const anyExamStarted = mcqCompleted || codingCompleted || interviewCompleted;
+  const allExamsCompleted = mcqCompleted && codingCompleted && interviewCompleted;
 
+  useEffect(() => {
+    const exitAllowed = !anyExamStarted || allExamsCompleted;
+    sessionStorage.setItem("exit_application_allowed", String(exitAllowed));
+    window.electronAPI?.hideExitApp?.();
+
+    if (!mcqCompleted) {
+      localStorage.removeItem("mcq_result");
+      localStorage.removeItem("exam_submitted");
+      localStorage.removeItem("exam_running");
+    }
+    if (!codingCompleted) {
+      localStorage.removeItem("assignment_submitted");
+      localStorage.removeItem("assignment_running");
+      localStorage.removeItem("assignment_end_time");
+      localStorage.removeItem("assignment_resume_count");
+      localStorage.removeItem("assignment_question");
+      localStorage.removeItem("assignment_language");
+      localStorage.removeItem("assignment_questions");
+    }
+    if (!mcqCompleted || !codingCompleted) {
+      sessionStorage.removeItem("candidateProgress_v1");
+    }
+  }, [anyExamStarted, allExamsCompleted, mcqCompleted, codingCompleted]);
 
 
   // Round permissions
-
-  const mcqCompleted = isCompletedStatus(bitsStatus) || progress.mcq.completed;
-  const codingCompleted = isCompletedStatus(codingStatus) || progress.coding.completed;
-  const interviewCompleted = isCompletedStatus(interviewStatus);
-
   const canStartMcq = !mcqCompleted;
 
 
@@ -122,17 +141,13 @@ function CandidateHome() {
 
             className="btn btn--submit round-btn"
 
-            disabled={!canStartMcq && !hasMcqResult}
+            disabled={!canStartMcq}
 
-            onClick={() => navigate(
-              hasMcqResult ? "/candidate/bitsassessment?view=result" : "/candidate/bitsassessment"
-            )}
+            onClick={() => navigate("/candidate/bitsassessment")}
 
           >
 
-            {hasMcqResult
-              ? "View Result"
-              : canStartMcq
+            {canStartMcq
               ? "Start Test"
               : "Completed"}
 

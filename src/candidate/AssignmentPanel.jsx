@@ -45,6 +45,7 @@ function AssignmentPanel() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isBlurred, setIsBlurred] = useState(false);
   const [systemInfo, setSystemInfo] = useState({});
   const [submitting, setSubmitting] = useState(false); 
   const [runningCode, setRunningCode] = useState(false);
@@ -90,6 +91,7 @@ function AssignmentPanel() {
   const cameraViolationActiveRef = useRef(false);
   const cameraViolationCountRef = useRef(0);
   const cameraWarningTimerRef = useRef(null);
+  const lastTabSwitchAtRef = useRef(0);
 
   useEffect(() => {
     cameraCoveredRef.current = cameraCovered;
@@ -465,44 +467,42 @@ function AssignmentPanel() {
   useEffect(() => {
     if (!started) return;
 
-    const handleVisibility = () => {
-      if (document.hidden) {
-        tabSwitchCountRef.current++;
-        localStorage.setItem("assignment_tab_switches", tabSwitchCountRef.current);
-        syncMetrics();
-        if (tabSwitchCountRef.current >= 3 && !submittedRef.current) {
-          submitCode("tab");
-        }
+    const recordTabSwitch = () => {
+      const now = Date.now();
+      if (now - lastTabSwitchAtRef.current < 750) return;
+      lastTabSwitchAtRef.current = now;
+
+      tabSwitchCountRef.current++;
+      const count = tabSwitchCountRef.current;
+      localStorage.setItem("assignment_tab_switches", String(count));
+      syncMetrics();
+
+      if (count >= 3 && !submittedRef.current) {
+        submitCode("tab");
+      } else {
+        setSecurityWarning(
+          count === 2
+            ? "Warning: one tab switch remains before automatic submission."
+            : `Tab switch detected. ${3 - count} chances remain.`
+        );
       }
     };
 
+    const handleVisibility = () => {
+      if (document.hidden) recordTabSwitch();
+    };
+
     const handleBlur = () => {
-      blurCountRef.current++;
-      localStorage.setItem("assignment_blur_events", blurCountRef.current);
-      syncMetrics();
+      setIsBlurred(true);
+      recordTabSwitch();
     };
 
     const removeSecurityListener = window.electronAPI?.onSecurityEvent?.((event) => {
       if (event.type !== "APPLICATION_SWITCH" || submittedRef.current) return;
-
-      tabSwitchCountRef.current = Math.max(
-        tabSwitchCountRef.current,
-        Number(event.count) || 0
-      );
-      localStorage.setItem("assignment_tab_switches", tabSwitchCountRef.current);
-      syncMetrics();
-
-      if (tabSwitchCountRef.current >= 3) {
-        submitCode("tab");
-      } else {
-        setSecurityWarning(
-          tabSwitchCountRef.current === 2
-            ? "Warning: one tab switch remains before automatic submission."
-            : `Tab switch detected. ${3 - tabSwitchCountRef.current} chances remain.`
-        );
-      }
+      recordTabSwitch();
     });
 
+    const handleFocus = () => setIsBlurred(false);
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -566,6 +566,7 @@ function AssignmentPanel() {
 
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("popstate", handlePopState);
@@ -599,6 +600,7 @@ function AssignmentPanel() {
       removeSecurityListener?.();
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("popstate", handlePopState);
@@ -937,6 +939,12 @@ function AssignmentPanel() {
         </div>
       )}
 
+      {isBlurred && (
+        <div className="app-banner" style={{ marginTop: 16 }} role="alert">
+          ⚠️ Focus lost — click back inside the exam window.
+        </div>
+      )}
+
       {questions.length > 0 && (
         <div className="question-picker" style={{ margin: "16px 28px 0" }}>
           {questions.map((q, index) => (
@@ -953,7 +961,7 @@ function AssignmentPanel() {
         </div>
       )}
 
-      <main className="app-main">
+      <main className="app-main coding-main">
         <ProblemPanel
           question={{
             ...currentQuestion,
@@ -998,7 +1006,13 @@ function AssignmentPanel() {
             </button>
           </div>
 
-          <textarea className="code-editor-textarea" value={code} onChange={(e) => setCode(e.target.value)} />
+          <textarea
+            className="code-editor-textarea"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            spellCheck="false"
+            aria-label="Code editor"
+          />
 
           <div className="problem-section-label">Custom Terminal Input</div>
           <textarea className="terminal-input-textarea" value={input} onChange={(e) => setInput(e.target.value)} />
@@ -1008,23 +1022,24 @@ function AssignmentPanel() {
         </section>
       </main>
 
+      {cameraCovered && (
+        <div className="app-banner coding-camera-alert" role="alert">
+          ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
+        </div>
+      )}
+
       <DraggableCamWindow
         videoRef={videoPreviewRef}
         onVideoRef={attachVideoElement}
       />
 
-      {cameraCovered && (
-        <div className="app-banner" style={{ margin: "12px 28px", background: "#fee2e2", borderColor: "#dc2626", color: "#991b1b" }} role="alert">
-          ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
-        </div>
-      )}
-
-      <div className="security-panel" style={{ margin: "0 28px 24px" }}>
+      <div className="security-panel coding-security" style={{ margin: "0 28px 24px" }}>
         <h5>Proctoring Metrics (Active Diagnostics)</h5>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px 16px" }}>
-          <div className="security-row"><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
-          <div className="security-row"><span>Blur events</span><strong>{metrics.blurEvents}</strong></div>
-          <div className="security-row"><span>Fullscreen exits</span><strong>{metrics.fullscreenExits}</strong></div>
+        <div className="coding-security-grid">
+          <div className={`security-row ${metrics.tabSwitches > 0 ? "security-row--alert" : ""}`}><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
+          <div className={`security-row ${metrics.blurEvents > 0 ? "security-row--alert" : ""}`}><span>Blur events</span><strong>{metrics.blurEvents}</strong></div>
+          <div className={`security-row ${metrics.fullscreenExits > 0 ? "security-row--alert" : ""}`}><span>Fullscreen exits</span><strong>{metrics.fullscreenExits} / 3</strong></div>
+          <div className={`security-row ${cameraCovered ? "security-row--alert" : ""}`}><span>Camera status</span><strong>{cameraCovered ? "Covered" : "Clear"}</strong></div>
         </div>
       </div>
     </div>
