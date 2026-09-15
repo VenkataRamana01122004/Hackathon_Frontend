@@ -1,130 +1,142 @@
-.role-overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.45);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:6000;
+.role-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    backdrop-filter: blur(var(--blur-sm));
+    -webkit-backdrop-filter: blur(var(--blur-sm));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 6000;
+    padding: 20px;
 }
 
-.role-modal{
-    width:700px;
-    background:white;
-    border-radius:20px;
-    overflow:hidden;
-    animation:popup .3s ease;
+.role-modal {
+    width: 700px;
+    max-width: 95%;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(var(--blur-lg));
+    -webkit-backdrop-filter: blur(var(--blur-lg));
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl), var(--shadow-inset);
+    color: var(--text-primary);
+    animation: glass-pop 0.3s ease;
 }
 
-.role-header{
-    background:#005EB8;
-    color:white;
-    padding:20px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.role-header {
+    background: var(--accent);
+    color: white;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.role-header button{
-    border:none;
-    background:none;
-    color:white;
-    font-size:22px;
-    cursor:pointer;
+.role-header button {
+    border: none;
+    background: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
 }
 
-.candidate-summary{
-    display:flex;
-    align-items:center;
-    gap:18px;
-    padding:25px;
-    background:#F5F8FC;
+.candidate-summary {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.06);
 }
 
-.candidate-avatar{
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    background:#005EB8;
-    color:white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:28px;
-    font-weight:bold;
+.candidate-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: bold;
 }
 
-.role-info{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:20px;
-    padding:25px;
+.role-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 25px;
 }
 
-.info-box{
-    display:flex;
-    align-items:center;
-    gap:15px;
-    background:#F8FAFC;
-    padding:18px;
-    border-radius:12px;
+.info-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    padding: 18px;
+    border-radius: 12px;
 }
 
-.info-box svg{
-    font-size:22px;
-    color:#005EB8;
+.info-box svg {
+    font-size: 22px;
+    color: var(--accent-light);
 }
 
-.info-box span{
-    display:block;
-    color:#64748B;
-    font-size:13px;
+.info-box span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 13px;
 }
 
-.form-group{
-    padding:0 25px 20px;
+.form-group {
+    padding: 0 25px 20px;
 }
 
-.form-group label{
-    display:block;
-    margin-bottom:8px;
-    font-weight:600;
-    color:#003B75;
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 .form-group select,
-.form-group textarea{
-    width:100%;
-    padding:12px;
-    border:1px solid #D9E2EC;
-    border-radius:10px;
-    outline:none;
-    font-size:15px;
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 10px;
+    outline: none;
+    font-size: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
 }
 
-.form-group textarea{
-    resize:none;
+.form-group textarea {
+    resize: none;
 }
 
-.role-footer{
-    display:flex;
-    justify-content:flex-end;
-    padding:20px 25px;
+.role-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 25px;
 }
 
-.save-role-btn{
-    border:none;
-    background:#005EB8;
-    color:white;
-    padding:14px 26px;
-    border-radius:10px;
-    cursor:pointer;
-    display:flex;
-    gap:10px;
-    align-items:center;
-    font-size:15px;
+.save-role-btn {
+    border: none;
+    background: var(--accent);
+    color: white;
+    padding: 14px 26px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 15px;
 }
 
-.save-role-btn:hover{
-    background:#003B75;
+.save-role-btn:hover {
+    background: var(--accent-dark);
 }

@@ -1,0 +1,85 @@
+/* ==========================================================================
+   Design Tokens — single source of truth for color, type, space & elevation.
+   Generalized from the Manager UI's blue/slate palette; consumed by every
+   role (Manager / Candidate / Employee / Main) and by styles/glass.css.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand / accent ---- */
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --accent-light: #60a5fa;
+  --accent-soft: rgba(37, 99, 235, 0.22);
+
+  /* ---- Semantic ---- */
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.22);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.22);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.22);
+  --info: #9333ea;
+  --info-soft: rgba(147, 51, 234, 0.22);
+
+  /* ---- Typography ---- */
+  --font-body: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, Menlo, monospace;
+
+  /* Text sits on translucent/blurred surfaces over a photo background,
+     so the whole app reads as a "light text on dark glass" system —
+     this is what keeps copy legible at every viewport over the image. */
+  --text-primary: #f8fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #b6c2d1;
+  --text-faint: #94a3b8;
+  --text-on-accent: #ffffff;
+
+  /* ---- Spacing scale ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* ---- Radius scale ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* ---- Elevation (soft, layered — no harsh edges) ---- */
+  --shadow-sm: 0 2px 8px rgba(8, 15, 30, 0.28);
+  --shadow-md: 0 8px 24px rgba(8, 15, 30, 0.32);
+  --shadow-lg: 0 16px 40px rgba(8, 15, 30, 0.4);
+  --shadow-xl: 0 24px 60px rgba(8, 15, 30, 0.48);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  /* ---- Glassmorphism primitives ---- */
+  --blur-sm: 8px;
+  --blur-md: 16px;
+  --blur-lg: 24px;
+  --blur-xl: 32px;
+
+  /* Light "frost" panels — the default surface for cards/nav/modals */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-strong: rgba(255, 255, 255, 0.16);
+  --glass-bg-elevated: rgba(255, 255, 255, 0.2);
+  --glass-bg-hover: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-border-strong: rgba(255, 255, 255, 0.3);
+
+  /* Dense/dark frost — for code editors, camera windows, terminals:
+     less see-through, more opaque, so monospace text stays crisp */
+  --glass-dark-bg: rgba(9, 14, 27, 0.62);
+  --glass-dark-bg-strong: rgba(9, 14, 27, 0.78);
+  --glass-dark-border: rgba(255, 255, 255, 0.1);
+
+  /* Overlay scrim behind modals */
+  --scrim: rgba(6, 10, 20, 0.6);
+
+  --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}

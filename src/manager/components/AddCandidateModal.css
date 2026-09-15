@@ -5,7 +5,9 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--scrim);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
   display: flex;
   justify-content: center;
   align-items: center;
@@ -25,28 +27,17 @@
   max-height: 90vh;
   overflow-y: auto;
 
-  background: #ffffff;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+  border: 1px solid var(--glass-border-strong);
   border-radius: 18px;
   padding: 30px;
+  color: var(--text-primary);
 
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-xl), var(--shadow-inset);
 
-  animation: popup 0.25s ease;
-}
-
-
-/* Popup Animation */
-
-@keyframes popup {
-  from {
-    transform: scale(0.92);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  animation: glass-pop 0.25s ease;
 }
 
 
@@ -59,17 +50,16 @@
 }
 
 .add-candidate-modal::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+  background: transparent;
 }
 
 .add-candidate-modal::-webkit-scrollbar-thumb {
-  background: #2563eb;
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
 
 .add-candidate-modal::-webkit-scrollbar-thumb:hover {
-  background: #1d4ed8;
+  background: rgba(255, 255, 255, 0.45);
 }
 
 
@@ -81,7 +71,7 @@
   margin: 0 0 25px;
   text-align: center;
 
-  color: #003b75;
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: 700;
 }
@@ -112,7 +102,7 @@
 .form-group label {
   margin-bottom: 8px;
 
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -128,7 +118,7 @@
 
   width: 100%;
 
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--glass-border-strong);
   border-radius: 10px;
 
   padding: 12px 14px;
@@ -140,7 +130,13 @@
 
   transition: 0.2s;
 
-  background: white;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.form-group select option {
+  color: #0f172a;
+  background: #f8fafc;
 }
 
 
@@ -154,10 +150,10 @@
 .form-group select:focus,
 .form-group textarea:focus {
 
-  border-color: #2563eb;
+  border-color: var(--accent-light);
 
   box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.12);
+    0 0 0 3px var(--accent-soft);
 }
 
 
@@ -207,36 +203,27 @@ input[type="file"] {
 /* Cancel */
 
 .cancel-btn {
-
-  background: #e5e7eb;
-
-  color: #374151;
-
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border-strong);
 }
 
 
 .cancel-btn:hover {
-
-  background: #d1d5db;
-
+  background: var(--glass-bg-hover);
 }
 
 
 /* Save */
 
 .save-btn {
-
-  background: #2563eb;
-
+  background: var(--accent);
   color: white;
-
 }
 
 
 .save-btn:hover {
-
-  background: #1d4ed8;
-
+  background: var(--accent-dark);
 }
 
 

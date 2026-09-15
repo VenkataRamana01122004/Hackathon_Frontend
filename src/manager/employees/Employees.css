@@ -3,9 +3,8 @@
 }
 
 .employees-title {
-  font-size: 40px;
-  font-weight: 700;
-  color: #0f4c97;
+  font-size: 30px;
+  color: var(--text-primary);
   margin-bottom: 28px;
 }
 
@@ -18,20 +17,38 @@
   flex-wrap: wrap;
 }
 
-.search-box {
+/* .search-box {
   width: 420px;
   height: 52px;
-  background: #fff;
-  border: 1px solid #dbe3ef;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  border: 1px solid var(--glass-border-strong);
   border-radius: 14px;
   display: flex;
   align-items: center;
   padding: 0 18px;
   gap: 12px;
+} */
+.search-box {
+    width: 30%;
+    height: 44px;
+    padding: 0px 18px;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(var(--blur-sm));
+    -webkit-backdrop-filter: blur(var(--blur-sm));
+    color: var(--text-primary);
+    outline: none;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    transition: .3s;
 }
 
 .search-box svg {
-  color: #2563eb;
+  color: var(--accent-light);
   font-size: 17px;
 }
 
@@ -40,7 +57,12 @@
   border: none;
   outline: none;
   background: transparent;
+  color: var(--text-primary);
   font-size: 15px;
+}
+
+.search-box input::placeholder {
+  color: var(--text-faint);
 }
 
 .filter-group {
@@ -50,33 +72,33 @@
 
 .filter-group select {
   width: 200px;
-  height: 52px;
-  border: 1px solid #dbe3ef;
+  height: 44px;
+  border: 1px solid var(--glass-border-strong);
   border-radius: 14px;
   padding: 0 15px;
   font-size: 15px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  color: var(--text-primary);
   cursor: pointer;
 }
 
-.table-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+.filter-group select option {
+  color: #0f172a;
+  background: #f8fafc;
 }
+
+/* Box styling now comes from the shared .list-card component in
+   styles/glass.css — .table-card is kept only as an alias there. */
 
 .employee-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.employee-table thead {
-  background: #2563eb;
-}
-
 .employee-table th {
-  color: white;
+  /* background/color inherited from the global thead th default */
   text-align: left;
   padding: 18px 20px;
   font-size: 16px;
@@ -85,13 +107,14 @@
 
 .employee-table td {
   padding: 18px 20px;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom: 1px solid var(--glass-border);
   font-size: 15px;
   vertical-align: middle;
+  color: var(--text-secondary);
 }
 
 .employee-table tbody tr:hover {
-  background: #f8fbff;
+  background: var(--glass-bg);
 }
 
 .employee-info {
@@ -103,13 +126,13 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .employee-info span {
   margin-top: 4px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .status-badge {
@@ -121,13 +144,13 @@
 }
 
 .available {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-soft);
+  color: #4ade80;
 }
 
 .busy {
-  background: #ffedd5;
-  color: #c2410c;
+  background: var(--warning-soft);
+  color: #fb923c;
 }
 
 @media (max-width: 1000px) {

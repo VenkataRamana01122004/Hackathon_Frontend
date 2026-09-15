@@ -4,12 +4,16 @@
     top: 0;
     width: 250px;
     height: 100vh;
-    background: #1E293B;
-    color: white;
+    background: var(--glass-dark-bg-strong);
+    backdrop-filter: blur(var(--blur-lg));
+    -webkit-backdrop-filter: blur(var(--blur-lg));
+    border-right: 1px solid var(--glass-dark-border);
+    color: var(--text-primary);
     transition: .3s;
     display: flex;
     flex-direction: column;
     z-index: 1000;
+    box-shadow: var(--shadow-lg);
 }
 
 .sidebar.close {
@@ -23,7 +27,8 @@
     align-items: center;
     font-size: 22px;
     font-weight: 700;
-    border-bottom: 1px solid rgba(255,255,255,.1);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .sidebar-menu {
@@ -42,19 +47,22 @@
     align-items: center;
     gap: 18px;
     padding: 15px 20px;
-    color: #CBD5E1;
+    margin: 0 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
     text-decoration: none;
     transition: .25s;
 }
 
 .menu-link:hover {
-    background: #2563EB;
-    color: white;
+    background: var(--glass-bg);
+    color: var(--text-primary);
 }
 
 .menu-link.active {
-    background: #2563EB;
-    color: white;
+    background: var(--accent-soft);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.4);
 }
 
 .menu-icon {
@@ -73,25 +81,26 @@
 }
 
 .logout:hover {
-    background: #DC2626;
+    background: var(--danger-soft);
+    color: #fca5a5;
 }
 
-@media(max-width:768px){
+@media(max-width:768px) {
 
-.sidebar{
-    width:70px;
-}
+    .sidebar {
+        width: 70px;
+    }
 
-.sidebar.open{
-    width:70px;
-}
+    .sidebar.open {
+        width: 70px;
+    }
 
-.menu-title{
-    display:none;
-}
+    .menu-title {
+        display: none;
+    }
 
-.sidebar-logo{
-    font-size:18px;
-}
+    .sidebar-logo {
+        font-size: 18px;
+    }
 
 }

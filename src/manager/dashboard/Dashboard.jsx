@@ -2,20 +2,67 @@ import {
   FaUsers,
   FaCalendarAlt,
   FaClipboardList,
-  FaUserCheck,
-  FaPlus
+  FaUserCheck
 } from "react-icons/fa";
 
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 import StatCard from "../components/StatCard";
+import CandidateModal from "../components/CandidateModal";
 
 import "./Dashboard.css";
+import "../components/CandidateTable.css";
 
 function Dashboard() {
-  const navigate = useNavigate();
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-  
+  const interviews = [
+    {
+      id: 1,
+      fullName: "Rahul Sharma",
+      appliedRole: "Frontend Developer",
+      time: "10:00 AM",
+      interviewer: "John",
+      status: "Scheduled",
+      email: "rahul.sharma@example.com",
+      phone: "Not provided",
+      experience: "Not provided",
+      qualification: "Not provided",
+      skills: "Not provided",
+      candidateId: "Not provided",
+      gender: "Not provided",
+    },
+    {
+      id: 2,
+      fullName: "Anjali",
+      appliedRole: "Backend Developer",
+      time: "11:30 AM",
+      interviewer: "Peter",
+      status: "Scheduled",
+      email: "Not provided",
+      phone: "Not provided",
+      experience: "Not provided",
+      qualification: "Not provided",
+      skills: "Not provided",
+      candidateId: "Not provided",
+      gender: "Not provided",
+    },
+    {
+      id: 3,
+      fullName: "Arun",
+      appliedRole: "AI Engineer",
+      time: "2:00 PM",
+      interviewer: "Sophia",
+      status: "Scheduled",
+      email: "Not provided",
+      phone: "Not provided",
+      experience: "Not provided",
+      qualification: "Not provided",
+      skills: "Not provided",
+      candidateId: "Not provided",
+      gender: "Not provided",
+    },
+  ];
 
   return (
 
@@ -53,16 +100,19 @@ function Dashboard() {
 
       </div>
 
-      
+      <h2>Today's Interviews</h2>
       <div className="dashboard-section">
 
-        <h2>Today's Interviews</h2>
+        
 
-        <table>
+        <table className="candidate-table">
 
           <thead>
 
-          <tr>
+          <tr
+            className="dashboard-candidate-row"
+            onClick={() => setSelectedCandidate(interviews[0])}
+          >
 
             <th>Candidate</th>
 
@@ -80,7 +130,10 @@ function Dashboard() {
 
           <tbody>
 
-          <tr>
+          <tr
+            className="dashboard-candidate-row"
+            onClick={() => setSelectedCandidate(interviews[1])}
+          >
 
             <td>Rahul Sharma</td>
 
@@ -94,7 +147,10 @@ function Dashboard() {
 
           </tr>
 
-          <tr>
+          <tr
+            className="dashboard-candidate-row"
+            onClick={() => setSelectedCandidate(interviews[2])}
+          >
 
             <td>Anjali</td>
 
@@ -127,6 +183,11 @@ function Dashboard() {
         </table>
 
       </div>
+
+      <CandidateModal
+        candidate={selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+      />
 
     </>
 

@@ -1,0 +1,43 @@
+/* ==========================================================================
+   Global fixed background — applied once, at the document root, so every
+   layered view/component (Manager, Candidate, Employee, Main) sits on top
+   of it and glass surfaces have something to blur.
+   ========================================================================== */
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+
+  background-image: linear-gradient(
+      180deg,
+      rgba(6, 10, 22, 0.72) 0%,
+      rgba(8, 13, 26, 0.6) 45%,
+      rgba(6, 10, 22, 0.78) 100%
+    ),
+    url("/ncratleos.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Fixed everywhere except small/handheld touch viewports, where
+     background-attachment:fixed can cause jank/repaint issues — cover+center
+     still keeps the same image framing there without the perf cost. */
+  background-attachment: fixed;
+}
+
+@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+/* #root stays fully transparent so the fixed body background shows through
+   every routed view. Individual pages/layouts must NOT set an opaque
+   background — they should rely on glass surfaces (see styles/glass.css). */
+#root {
+  min-height: 100vh;
+  background: transparent;
+}

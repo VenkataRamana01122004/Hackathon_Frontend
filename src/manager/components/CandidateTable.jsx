@@ -17,7 +17,7 @@ function CandidateTable({
   onAssignRole,
 }) {
   return (
-    <div className="candidate-table-card">
+    <div className="list-card candidate-table-card">
       <table className="candidate-table">
         <thead>
           <tr>

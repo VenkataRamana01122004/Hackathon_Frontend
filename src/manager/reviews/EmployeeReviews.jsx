@@ -136,6 +136,7 @@ function EmployeeReviews() {
 
           </div>
 
+          <div className="list-card">
           <table className="review-table">
 
               <thead>
@@ -241,6 +242,7 @@ function EmployeeReviews() {
               </tbody>
 
           </table>
+          </div>
 
           {
 

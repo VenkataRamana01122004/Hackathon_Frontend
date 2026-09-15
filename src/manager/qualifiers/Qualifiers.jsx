@@ -101,10 +101,6 @@ const fetchCandidates = async () => {
 
           <h1>Qualifiers</h1>
 
-          <p>
-            Candidates qualified for the final interview
-          </p>
-
         </div>
 
       </div>

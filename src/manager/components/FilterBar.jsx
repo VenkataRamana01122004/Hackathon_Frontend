@@ -15,7 +15,7 @@ function FilterBar({
         value={role}
         onChange={(e) => setRole(e.target.value)}
       >
-        <option value="">All Roles</option>
+        <option value="">Roles</option>
         <option>Frontend Developer</option>
         <option>Backend Developer</option>
         <option>Full Stack Developer</option>
@@ -28,7 +28,7 @@ function FilterBar({
         value={experience}
         onChange={(e) => setExperience(e.target.value)}
       >
-        <option value="">All</option>
+        <option value="">Experience</option>
         <option value="0-2">0-2 Years</option>
         <option value="3-5">3-5 Years</option>
         <option value="6-10">6-10 Years</option>

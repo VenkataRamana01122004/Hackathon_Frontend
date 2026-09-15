@@ -1,37 +1,29 @@
-.filter-bar{
-
-    display:flex;
-
-    gap:15px;
-
-    align-items:center;
-
+.filter-bar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
-.filter-bar select{
-
-    width:180px;
-
-    padding:12px;
-
-    border:1px solid #dbe4f0;
-
-    border-radius:10px;
-
-    background:white;
-
-    outline:none;
-
-    cursor:pointer;
-
-    transition:.3s;
-
+.filter-bar select {
+    width: 180px;
+    padding: 12px;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(var(--blur-sm));
+    -webkit-backdrop-filter: blur(var(--blur-sm));
+    color: var(--text-primary);
+    outline: none;
+    cursor: pointer;
+    transition: .3s;
 }
 
-.filter-bar select:focus{
+.filter-bar select option {
+    color: #0f172a;
+    background: #f8fafc;
+}
 
-    border-color:#005EB8;
-
-    box-shadow:0 0 8px rgba(0,94,184,.15);
-
+.filter-bar select:focus {
+    border-color: var(--accent-light);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }

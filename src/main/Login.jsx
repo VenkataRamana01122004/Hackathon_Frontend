@@ -94,6 +94,7 @@ function Login({ onLogin }) {
           id="login-email"
           name="email"
           type="email"
+          className="login-input"
           value={data.email}
           onChange={handleChange}
           placeholder="Email"
@@ -106,6 +107,7 @@ function Login({ onLogin }) {
           id="login-password"
           type="password"
           name="password"
+          className="login-input"
           value={data.password}
           onChange={handleChange}
           placeholder="Password"
@@ -114,7 +116,7 @@ function Login({ onLogin }) {
         />
 
         {error && <p className="login-error" role="alert">{error}</p>}
-
+        <br />
         <button className="btn btn--submit login-submit" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Signing in..." : "Login"}
         </button>

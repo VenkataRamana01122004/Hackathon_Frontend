@@ -67,7 +67,7 @@ const validateCandidates = async (userId) => {
                 </div>
             </div>
 
-            <div className="manager-table-card assessment-table-card">
+            <div className="list-card manager-table-card assessment-table-card">
 
             <table className="manager-table">
                 <thead>

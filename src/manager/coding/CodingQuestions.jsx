@@ -4,6 +4,7 @@ import { FaPlus, FaEye, FaEdit } from "react-icons/fa";
 
 import EditQuestionModal from "./EditQuestionModal";
 
+import "../components/manager-pages.css";
 import "./CodingQuestions.css";
 
 import AddQuestionModal from "./AddQuestionModal";
@@ -114,7 +115,7 @@ function CodingQuestions() {
 
   return (
 
-    <div className="coding-page">
+    <div className="coding-questions-page">
 
       <div className="manager-page-header">
 
@@ -164,7 +165,7 @@ function CodingQuestions() {
 
       </div>
 
-      <div className="manager-table-card">
+      <div className="list-card manager-table-card">
 
         <table className="manager-table">
 

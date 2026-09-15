@@ -1,7 +1,5 @@
 .qualifiers-page {
     padding: 30px;
-    background: #F5F8FC;
-    min-height: 100vh;
 }
 
 /* Header */
@@ -15,12 +13,12 @@
 
 .page-header h1 {
     font-size: 32px;
-    color: #003B75;
+    color: var(--text-primary);
     margin-bottom: 6px;
 }
 
 .page-header p {
-    color: #64748B;
+    color: var(--text-muted);
     font-size: 15px;
 }
 
@@ -45,43 +43,50 @@
 }
 
 .summary-card {
-    background: white;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 22px;
-    box-shadow: 0 8px 18px rgba(0,0,0,.08);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
     transition: .3s;
 }
 
 .summary-card:hover {
     transform: translateY(-5px);
+    background: var(--glass-bg-hover);
 }
 
 .summary-card h3 {
-    color: #64748B;
+    color: var(--text-muted);
     font-size: 15px;
     margin-bottom: 12px;
 }
 
 .summary-card h2 {
-    color: #005EB8;
+    color: var(--accent-light);
     font-size: 34px;
 }
 
 /* Candidate Table */
 
 .table-wrapper {
-    background: white;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    border: 1px solid var(--glass-border);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
 }
 
 /* Status */
 
 .status-qualified {
     display: inline-block;
-    background: #DCFCE7;
-    color: #15803D;
+    background: var(--success-soft);
+    color: #4ade80;
     padding: 7px 14px;
     border-radius: 20px;
     font-size: 13px;
@@ -90,8 +95,8 @@
 
 .status-final {
     display: inline-block;
-    background: #DBEAFE;
-    color: #1D4ED8;
+    background: var(--accent-soft);
+    color: var(--accent-light);
     padding: 7px 14px;
     border-radius: 20px;
     font-size: 13px;
@@ -100,8 +105,8 @@
 
 .status-review {
     display: inline-block;
-    background: #FEF3C7;
-    color: #B45309;
+    background: var(--warning-soft);
+    color: #fbbf24;
     padding: 7px 14px;
     border-radius: 20px;
     font-size: 13px;
@@ -111,7 +116,7 @@
 /* Buttons */
 
 .primary-btn {
-    background: #005EB8;
+    background: var(--accent);
     color: white;
     border: none;
     padding: 11px 22px;
@@ -121,13 +126,13 @@
 }
 
 .primary-btn:hover {
-    background: #003B75;
+    background: var(--accent-dark);
 }
 
 .secondary-btn {
-    background: white;
-    color: #005EB8;
-    border: 1px solid #005EB8;
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border-strong);
     padding: 11px 22px;
     border-radius: 10px;
     cursor: pointer;
@@ -135,23 +140,25 @@
 }
 
 .secondary-btn:hover {
-    background: #005EB8;
-    color: white;
+    background: var(--glass-bg);
 }
 
 /* Empty State */
 
 .empty-state {
-    background: white;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 60px;
     text-align: center;
-    color: #64748B;
-    box-shadow: 0 8px 18px rgba(0,0,0,.08);
+    color: var(--text-muted);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
 }
 
 .empty-state h2 {
-    color: #003B75;
+    color: var(--text-primary);
     margin-bottom: 10px;
 }
 

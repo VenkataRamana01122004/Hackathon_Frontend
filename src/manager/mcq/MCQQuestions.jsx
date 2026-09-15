@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaPlus, FaEye, FaEdit } from "react-icons/fa";
 
+import "../components/manager-pages.css";
 import "./MCQQuestions.css";
 
 import AddMCQModal from "./AddMCQModal";
@@ -105,7 +106,7 @@ function MCQQuestions() {
 
   return (
 
-    <div className="coding-page">
+    <div className="mcq-questions-page">
 
       <div className="manager-page-header">
 
@@ -127,7 +128,7 @@ function MCQQuestions() {
       <div className="manager-toolbar">
 
         <input
-          placeholder="Search Question"
+          placeholder="Search question..."
           value={search}
           onChange={(e)=>setSearch(e.target.value)}
         />
@@ -152,7 +153,7 @@ function MCQQuestions() {
 
       </div>
 
-      <div className="manager-table-card">
+      <div className="list-card manager-table-card">
 
         <table className="manager-table">
 

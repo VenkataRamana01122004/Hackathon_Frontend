@@ -796,33 +796,25 @@ function AssignmentPanel() {
   // 1. Resume Screen Layout
   if (!started && hasPreviousAssignment && !isSubmitted) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "#efefd0" }}>
-        <h1 style={{ fontFamily: "Arial", color: "#2b3a2e", marginBottom: "20px" }}>Resume Assignment</h1>
-        <div style={{ background: "#fff", padding: "30px", borderRadius: "8px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", textAlign: "center", maxWidth: "500px" }}>
-          <p style={{ fontFamily: "Arial", color: "#e11d48", fontWeight: "bold", marginBottom: "15px" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "transparent" }}>
+        <h1 style={{ color: "var(--text-primary)", marginBottom: "20px" }}>Resume Assignment</h1>
+        <div className="glass-panel glass-panel--elevated" style={{ padding: "30px", textAlign: "center", maxWidth: "500px" }}>
+          <p style={{ color: "#fca5a5", fontWeight: "bold", marginBottom: "15px" }}>
             An active exam session was detected!
           </p>
-          <p style={{ fontFamily: "Arial", color: "#4b5563", marginBottom: "25px", lineHeight: "1.5" }}>
-            You have used <strong>{resumeCount}</strong> out of <strong>{MAX_RESUMES}</strong> allowed session resumes. 
+          <p style={{ color: "var(--text-secondary)", marginBottom: "25px", lineHeight: "1.5" }}>
+            You have used <strong>{resumeCount}</strong> out of <strong>{MAX_RESUMES}</strong> allowed session resumes.
             Exceeding this limit will instantly auto-submit your assignment.
           </p>
           {loadingQuestions ? (
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#3a5a40" }}>
+            <p style={{ fontSize: "18px", fontWeight: "600", color: "var(--accent-light)" }}>
               Loading Questions...
             </p>
           ) : (
             <button
               onClick={resumeAssignment}
-              style={{
-                padding: "12px 24px",
-                fontSize: 16,
-                background: "#e11d48",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
+              className="btn btn--danger"
+              style={{ padding: "12px 24px", fontSize: 16 }}
             >
               Resume Assignment
             </button>
@@ -835,29 +827,21 @@ function AssignmentPanel() {
   // 2. Default Initial Start Layout
   if (!started) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "#efefd0" }}>
-        <h1 style={{ fontFamily: "Arial", color: "#2b3a2e", marginBottom: "20px" }}>Secure Assessment Environment</h1>
-        <div style={{ background: "#fff", padding: "30px", borderRadius: "8px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", textAlign: "center", maxWidth: "500px" }}>
-          <p style={{ fontFamily: "Arial", color: "#9a9a8f", marginBottom: "25px", lineHeight: "1.5" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", background: "transparent" }}>
+        <h1 style={{ color: "var(--text-primary)", marginBottom: "20px" }}>Secure Assessment Environment</h1>
+        <div className="glass-panel glass-panel--elevated" style={{ padding: "30px", textAlign: "center", maxWidth: "500px" }}>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "25px", lineHeight: "1.5" }}>
             This test triggers comprehensive proctoring analytics including active background video/audio feed evaluation, layout lockouts, and context control locks.
           </p>
           {loadingQuestions ? (
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#3a5a40" }}>
+            <p style={{ fontSize: "18px", fontWeight: "600", color: "var(--accent-light)" }}>
               Loading Questions...
             </p>
           ) : (
             <button
               onClick={startAssignment}
-              style={{
-                padding: "12px 24px",
-                fontSize: 16,
-                background: "#3a5a40",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
+              className="btn btn--primary"
+              style={{ padding: "12px 24px", fontSize: 16 }}
             >
               Accept Permissions & Start
             </button>
@@ -934,7 +918,7 @@ function AssignmentPanel() {
       )}
 
       {securityWarning && (
-        <div className="app-banner" style={{ marginTop: 16, background: securityWarning.startsWith("Camera") ? "#fee2e2" : undefined, borderColor: securityWarning.startsWith("Camera") ? "#dc2626" : undefined, color: securityWarning.startsWith("Camera") ? "#991b1b" : undefined }} role="alert">
+        <div className="app-banner" style={{ marginTop: 16, background: securityWarning.startsWith("Camera") ? "var(--danger-soft)" : undefined, borderColor: securityWarning.startsWith("Camera") ? "var(--danger)" : undefined, color: securityWarning.startsWith("Camera") ? "#fca5a5" : undefined }} role="alert">
           ⚠️ {securityWarning}
         </div>
       )}

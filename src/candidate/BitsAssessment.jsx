@@ -976,25 +976,25 @@ logEvent("Brand new operational exam profile generated.");
     const totalQs = submittedQuestionTotal || questions.length;
     const answeredQs = Object.keys(answers).length;
     return (
-      <div style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '600px', margin: '40px auto', border: '1px solid #a3b18a', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', background: '#f2f7ee' }}>
-        <h2 style={{ color: '#588157', marginBottom: '20px' }}>✓ Exam Submitted Successfully</h2>
-        <div style={{ borderBottom: '1px solid #a3b18a', paddingBottom: '20px', marginBottom: '20px' }}>
+      <div className="glass-panel glass-panel--elevated" style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '600px', margin: '40px auto', color: 'var(--text-primary)' }}>
+        <h2 style={{ color: '#4ade80', marginBottom: '20px' }}>✓ Exam Submitted Successfully</h2>
+        <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '20px', marginBottom: '20px' }}>
           <p>Candidate: <strong>{CANDIDATE_NAME}</strong></p>
           <p>Username: <code>{CANDIDATE_USERNAME}</code></p>
         </div>
-        <h4 style={{ color: '#2b3a2e' }}>Your Score</h4>
-        <div style={{ fontSize: '36px', fontWeight: '700', color: '#3a5a40' }}>
+        <h4 style={{ color: 'var(--text-primary)' }}>Your Score</h4>
+        <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--accent-light)' }}>
           {submissionResult?.correct ?? 0} / {submissionResult?.total ?? totalQs}
         </div>
-        <p style={{ color: '#588157' }}>{submissionResult?.percentage ?? 0}%</p>
-        <p style={{ color: '#7a2b2b' }}>Submission reason: {submissionResult?.reason}</p>
-        <h4 style={{ color: '#2b3a2e' }}>Submission Summary</h4>
-        <div style={{ display: 'flex', justifyContent: 'space-around', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #a3b18a', margin: '20px 0' }}>
-          <div><strong>{totalQs}</strong><br/><small style={{color:'#9a9a8f'}}>Total Tasks</small></div>
-          <div><strong>{answeredQs}</strong><br/><small style={{color:'#9a9a8f'}}>Answered</small></div>
-          <div><strong>{totalQs - answeredQs}</strong><br/><small style={{color:'#9a9a8f'}}>Skipped</small></div>
+        <p style={{ color: '#4ade80' }}>{submissionResult?.percentage ?? 0}%</p>
+        <p style={{ color: '#fca5a5' }}>Submission reason: {submissionResult?.reason}</p>
+        <h4 style={{ color: 'var(--text-primary)' }}>Submission Summary</h4>
+        <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-around', padding: '15px', margin: '20px 0' }}>
+          <div><strong>{totalQs}</strong><br/><small style={{color:'var(--text-muted)'}}>Total Tasks</small></div>
+          <div><strong>{answeredQs}</strong><br/><small style={{color:'var(--text-muted)'}}>Answered</small></div>
+          <div><strong>{totalQs - answeredQs}</strong><br/><small style={{color:'var(--text-muted)'}}>Skipped</small></div>
         </div>
-        <p style={{ fontSize: '14px', color: '#9a9a8f' }}>Your biometric data, response profile, and security logs are fully synchronized.</p>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Your biometric data, response profile, and security logs are fully synchronized.</p>
         <button className="btn btn--submit" onClick={() => navigate("/candidate")}>
           Continue to Candidate Home
         </button>
@@ -1007,42 +1007,42 @@ if (!examStarted) {
     const submittedData = localStorage.getItem("exam_submitted") === "true";
 
     return (
-      <div style={{ padding: 30, maxWidth: 700, margin: "60px auto", border: "1px solid #a3b18a", borderRadius: 10, textAlign: "center", boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+      <div className="glass-panel glass-panel--elevated" style={{ padding: 30, maxWidth: 700, margin: "60px auto", textAlign: "center", color: 'var(--text-primary)' }}>
         <h2>Secure Examination Environment</h2>
         <h3>{CANDIDATE_NAME}</h3>
-        <p style={{ color: '#bc4749', fontSize: '14px' }}>
+        <p style={{ color: '#fca5a5', fontSize: '14px' }}>
           Warning: Professional anti-cheat logs, tab tracking, and hardware camera monitoring sync automatically.
         </p>
 
         {loading ? (
-          <div style={{ padding: "14px 35px", fontSize: 16, fontWeight: 'bold', color: '#3a5a40' }}>
+          <div style={{ padding: "14px 35px", fontSize: 16, fontWeight: 'bold', color: 'var(--accent-light)' }}>
             Loading Questions...
           </div>
         ) : submittedData ? (
           <>
-            <div style={{ background: "#e6efe1", color: "#335c39", padding: 15, borderRadius: 5, marginBottom: 20 }}>
+            <div style={{ background: "var(--success-soft)", color: "#4ade80", padding: 15, borderRadius: 5, marginBottom: 20 }}>
               ✅ Previous assessment layout data has already been fully processed and locked.
             </div>
-            <button onClick={startNewExam} style={{ padding: "12px 25px", fontSize: 16, cursor: "pointer", background: '#3a5a40', color:'#fff', border:'none', borderRadius:'5px' }}>
+            <button onClick={startNewExam} className="btn btn--primary" style={{ padding: "12px 25px", fontSize: 16 }}>
               Start New Exam
             </button>
           </>
         ) : hasExamData ? (
           <>
-            <div style={{ background: "#f5e6cf", color: "#8a5a1f", padding: 15, borderRadius: 5, marginBottom: 20, textAlign: 'left' }}>
+            <div style={{ background: "var(--warning-soft)", color: "#fbbf24", padding: 15, borderRadius: 5, marginBottom: 20, textAlign: 'left' }}>
               <strong>Previous active exam state detected.</strong>
               <br /><br />
               Authorized Recovered Attempts remaining: <strong>{resumeCount} / {MAX_RESUMES}</strong>
             </div>
-            <button onClick={resumeExam} disabled={resumeCount >= MAX_RESUMES} style={{ padding: "12px 25px", marginRight: 15, cursor: resumeCount >= MAX_RESUMES ? "not-allowed" : "pointer", background: '#588157', color:'#fff', border:'none', borderRadius:'5px' }}>
+            <button onClick={resumeExam} disabled={resumeCount >= MAX_RESUMES} className="btn" style={{ padding: "12px 25px", marginRight: 15, background: 'var(--success)', color: '#fff' }}>
               Resume Active Session
             </button>
-            <button onClick={startNewExam} style={{ padding: "12px 25px", cursor: "pointer", background: '#bc4749', color:'#fff', border:'none', borderRadius:'5px' }}>
+            <button onClick={startNewExam} className="btn btn--danger" style={{ padding: "12px 25px" }}>
               Overwrite & Start New
             </button>
           </>
         ) : (
-          <button onClick={startNewExam} style={{ padding: "14px 35px", fontSize: 16, cursor: "pointer", background: '#3a5a40', color: '#fff', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}>
+          <button onClick={startNewExam} className="btn btn--primary" style={{ padding: "14px 35px", fontSize: 16, fontWeight: 'bold' }}>
             Start Exam
           </button>
         )}
@@ -1050,7 +1050,7 @@ if (!examStarted) {
     );
   }
 
-  if (questions.length === 0) return <div style={{textAlign:'center', marginTop:'100px'}}>Initializing Secure Question Bank Matrix Layers...</div>;
+  if (questions.length === 0) return <div style={{textAlign:'center', marginTop:'100px', color: 'var(--text-primary)'}}>Initializing Secure Question Bank Matrix Layers...</div>;
 
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
@@ -1077,7 +1077,7 @@ if (!examStarted) {
         <div className="app-title">
           Exam Terminal Dashboard
           {isOffline && (
-            <span style={{ marginLeft: 10, background: "#bc4749", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+            <span style={{ marginLeft: 10, background: "var(--danger)", color: "#fff", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
               OFFLINE
             </span>
           )}
@@ -1140,7 +1140,7 @@ if (!examStarted) {
       )}
 
       {cameraCovered && (
-        <div className="app-banner" style={{ marginTop: 16, background: "#fee2e2", borderColor: "#dc2626", color: "#991b1b" }} role="alert">
+        <div className="app-banner" style={{ marginTop: 16, background: "var(--danger-soft)", borderColor: "var(--danger)", color: "#fca5a5" }} role="alert">
           ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
         </div>
       )}

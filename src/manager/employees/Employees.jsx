@@ -55,7 +55,7 @@ function Employees() {
           <FaSearch />
           <input
             type="text"
-            placeholder="Search Employee..."
+            placeholder="  Search Employee..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -66,7 +66,7 @@ function Employees() {
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
           >
-            <option value="">All Designations</option>
+            <option value="">Designations</option>
 
             {[...new Set(employees.map((e) => e.designation))]
               .filter(Boolean)
@@ -81,14 +81,14 @@ function Employees() {
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            <option value="">All Status</option>
+            <option value="">Status</option>
             <option value="Available">Available</option>
             <option value="Busy">Busy</option>
           </select>
         </div>
       </div>
 
-      <div className="table-card">
+      <div className="list-card table-card">
         <table className="employee-table">
           <thead>
             <tr>
