@@ -242,7 +242,6 @@ if (assessments.length === 0) {
           borderRadius: "8px",
           padding: "15px",
           marginBottom: "15px",
-          background: "#fafafa",
         }}
       >
         <h4>Problem {selectedProblem + 1}</h4>

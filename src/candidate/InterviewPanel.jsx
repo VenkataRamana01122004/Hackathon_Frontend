@@ -426,6 +426,20 @@ function InterviewPanel() {
     }
   };
 
+  // The permission-screen <video> and the in-interview <video> are two
+  // separate DOM nodes sharing videoRef — when `started` flips to true,
+  // React mounts a fresh element that never got the stream attached, so
+  // the camera goes blank unless it's reattached here.
+  useEffect(() => {
+    if (!started) return;
+    const video = videoRef.current;
+    const stream = mediaStreamRef.current;
+    if (video && stream) {
+      video.srcObject = stream;
+      video.play().catch(() => {});
+    }
+  }, [started]);
+
   // --------------------------------------------------
   // NEXT QUESTION
   // --------------------------------------------------

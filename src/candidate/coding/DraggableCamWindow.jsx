@@ -13,7 +13,9 @@ const HEADER_HEIGHT = 34;
 export default function DraggableCamWindow({ videoRef, onVideoRef }) {
   const [pos, setPos] = useState(() => ({
     x: typeof window !== "undefined" ? window.innerWidth - WIDTH - 32 : 40,
-    y: 90,
+    // Start below the header/question-picker/editor-toolbar row so the
+    // floating window doesn't spawn on top of the Run/Submit buttons.
+    y: 170,
   }));
   const [minimized, setMinimized] = useState(false);
   const dragRef = useRef(null);

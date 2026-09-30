@@ -819,6 +819,13 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 22px 26px 26px;
+  box-shadow: var(--shadow-md), var(--shadow-inset);
 }
 
 .editor-toolbar {
@@ -868,9 +875,11 @@
 
 .terminal-input-textarea {
   width: 100%;
-  height: 60px;
+  height: 200px;
+  flex: 0 0 auto;
   border-radius: 8px;
   border: 1.5px solid var(--glass-border-strong);
+  resize: vertical;
   padding: 10px;
   font-family: var(--font-mono);
   font-size: 0.85rem;
@@ -955,3 +964,426 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* ============================================================
+   Interview round (InterviewPanel.jsx) — same glass surface/
+   spacing language as the coding round above (app-shell/app-header/
+   glass cards/btn), applied to the plain markup this component
+   previously rendered with no styling at all.
+   ============================================================ */
+
+.interview-panel {
+  min-height: 100vh;
+  padding: 20px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.interview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.interview-header h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.interview-header p { margin: 0; color: var(--text-secondary); font-size: 0.85rem; }
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.timer.danger {
+  border-color: var(--danger);
+  color: #fca5a5;
+  animation: pulse-timer 1s infinite;
+}
+
+/* ---- Pre-interview camera/mic permission screen ---- */
+
+.media-permission-box {
+  max-width: 560px;
+  margin: 40px auto 0;
+  padding: 30px;
+  text-align: center;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg), var(--shadow-inset);
+  color: var(--text-primary);
+}
+
+.media-permission-box h2 { margin: 0 0 10px; font-size: 1.3rem; }
+.media-permission-box p { color: var(--text-secondary); margin: 0 0 20px; line-height: 1.5; }
+
+.permission-video-wrapper {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-dark-border);
+  margin-bottom: 20px;
+}
+
+.permission-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  background: rgba(9, 14, 27, 0.55);
+}
+
+.video-placeholder strong { color: var(--text-primary); }
+.video-placeholder span { font-size: 0.8rem; }
+
+.camera-icon { font-size: 2.2rem; margin-bottom: 4px; }
+
+.device-status-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.device-status {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  text-align: left;
+}
+
+.device-status span { font-size: 1.3rem; }
+.device-status strong { display: block; font-size: 0.85rem; color: var(--text-primary); }
+.device-status p { margin: 2px 0 0; font-size: 0.75rem; color: var(--text-secondary); }
+
+.device-status.success { border-color: rgba(22, 163, 74, 0.4); background: var(--success-soft); }
+.device-status.success p { color: #4ade80; }
+.device-status.warning { border-color: rgba(217, 119, 6, 0.4); background: var(--warning-soft); }
+.device-status.warning p { color: #fbbf24; }
+
+.media-error {
+  background: var(--danger-soft);
+  border-left: 4px solid var(--danger);
+  color: #fecaca;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.ready-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--success-soft);
+  border: 1px solid rgba(22, 163, 74, 0.4);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.ready-message strong { color: var(--text-primary); display: block; }
+.ready-message p { margin: 2px 0 0; color: #4ade80; font-size: 0.8rem; }
+
+.ready-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.primary-button {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  transition: background var(--transition), opacity var(--transition);
+}
+
+.primary-button:hover:not(:disabled) { background: var(--accent-dark); }
+.primary-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.start-button { margin-top: 4px; }
+
+/* ---- In-progress interview layout ----
+   camera-container/question-section/answer-section/action-section/
+   submitted-answers are plain sibling divs in the JSX (no left/right
+   wrapper), so this stays a single stacked column rather than a grid
+   that would need explicit placement to keep them in order. */
+
+.interview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.security-status {
+  background: var(--warning-soft);
+  border-left: 4px solid var(--warning);
+  color: #fde68a;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  border-radius: 0 8px 8px 0;
+}
+
+.camera-container {
+  background: var(--glass-dark-bg-strong);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-dark-border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.camera-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.camera-header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.recording-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #fca5a5;
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
+  animation: blink-dot 1.6s infinite;
+}
+
+.video-wrapper {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.interview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.live-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(239, 68, 68, 0.85);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+}
+
+.voice-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.voice-status.speaking {
+  background: var(--success-soft);
+  border-color: rgba(22, 163, 74, 0.4);
+}
+
+.voice-icon { font-size: 1.2rem; }
+
+.voice-text { flex: 1; min-width: 0; }
+.voice-text strong { display: block; font-size: 0.8rem; color: var(--text-primary); }
+.voice-text span { font-size: 0.72rem; color: var(--text-secondary); }
+
+.voice-indicator {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+}
+
+.voice-indicator span {
+  width: 3px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--text-faint);
+}
+
+.voice-indicator.active span {
+  background: var(--success);
+  animation: voice-bounce 0.8s ease-in-out infinite;
+}
+
+.voice-indicator.active span:nth-child(2) { animation-delay: 0.15s; }
+.voice-indicator.active span:nth-child(3) { animation-delay: 0.3s; }
+.voice-indicator.active span:nth-child(4) { animation-delay: 0.45s; }
+
+@keyframes voice-bounce {
+  0%, 100% { height: 6px; }
+  50% { height: 18px; }
+}
+
+.question-section,
+.answer-section,
+.submitted-answers {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  box-shadow: var(--shadow-md), var(--shadow-inset);
+}
+
+.question-section h2 { margin: 8px 0 0; color: var(--text-primary); font-size: 1.3rem; }
+
+.question-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-light);
+}
+
+.answer-section label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-light);
+  margin-bottom: 10px;
+}
+
+.answer-section textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1.5px solid var(--glass-border-strong);
+  padding: 14px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.answer-section textarea:focus {
+  outline: none;
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.action-section {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-section .primary-button { width: auto; padding: 12px 28px; }
+
+.submitted-answers h3 {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-light);
+}
+
+.answer-card {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.answer-card:last-child { border-bottom: none; }
+
+.answer-card strong { display: block; color: var(--text-primary); margin-bottom: 4px; font-size: 0.9rem; }
+.answer-card p { margin: 0; color: var(--text-secondary); font-size: 0.85rem; }

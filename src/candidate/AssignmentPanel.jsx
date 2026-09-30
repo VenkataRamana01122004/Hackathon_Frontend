@@ -1017,7 +1017,7 @@ function AssignmentPanel() {
         onVideoRef={attachVideoElement}
       />
 
-      <div className="security-panel coding-security" style={{ margin: "0 28px 24px" }}>
+      <div className="security-panel coding-security" style={{ margin: "20px 28px 28px" }}>
         <h5>Proctoring Metrics (Active Diagnostics)</h5>
         <div className="coding-security-grid">
           <div className={`security-row ${metrics.tabSwitches > 0 ? "security-row--alert" : ""}`}><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
