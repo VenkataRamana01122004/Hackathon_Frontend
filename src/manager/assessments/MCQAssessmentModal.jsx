@@ -22,7 +22,7 @@ const assessment = assessments[selectedIndex];
       );
 
       // console.log(response.data.data);
-// console.log(response.data.data[0].answers);
+console.log(response.data.data[0].answers);
       setAssessments(response.data.data || []);
     } catch (err) {
 
@@ -279,31 +279,36 @@ if (assessments.length === 0) {
 
             <tbody>
 
-              {assessment.questions?.map((q, index) => (
 
-                <tr key={index}>
+{assessment.questions?.map((q, index) => {
+  const questionId = typeof q === "object"
+    ? q.id
+    : q;
 
-                  <td>
-                    Question {index + 1}
-                  </td>
+  const answer =
+    assessment.answers?.[questionId] ??
+    assessment.answers?.[String(questionId)];
 
-                  <td>
+  const status =
+    assessment.statuses?.[questionId] ??
+    assessment.statuses?.[String(questionId)];
 
-                    {assessment.statuses?.[index+1] || "-"}
+  return (
+    <tr key={questionId ?? index}>
+      <td>Question {index + 1}</td>
 
-                  </td>
+      <td>
+        {status ?? (answer != null ? "answered" : "-")}
+      </td>
 
-<td>
-  {Array.isArray(assessment.answers?.[index + 1])
-    ? assessment.answers[index + 1]
-        .map(answer => answer.trim())
-        .join(", ")
-    : assessment.answers?.[index + 1] ?? "-"}
-</td>
-
-                </tr>
-
-              ))}
+      <td>
+        {Array.isArray(answer)
+          ? answer.map(item => String(item).trim()).join(", ")
+          : answer ?? "-"}
+      </td>
+    </tr>
+  );
+})}
 
             </tbody>
 

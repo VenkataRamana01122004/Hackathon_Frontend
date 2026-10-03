@@ -12,7 +12,7 @@ import "./candidate.css";
 
 // --- CONFIGURATION ---
 const BACKEND_URL = 'http://localhost:5000/api/interview/submitbitsassessment';
-const SECURITY_URL = "http://localhost:5000/api/candidate/security-check";
+const SECURITY_URL = "http://localhost:5000/api/candidate/background-process";
 const EXAM_DURATION = 300;
 const MAX_RESUMES = 1;  
 

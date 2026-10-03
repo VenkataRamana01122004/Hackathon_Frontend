@@ -1,13 +1,14 @@
 import {
   FaHome,
-  FaUsers,
   FaUserTie,
   FaUserCheck,
-  FaClipboardCheck,
-  FaSignOutAlt,
+  FaUsers,
   FaCode,
-  FaQuestionCircle,
-  FaFileAlt
+  FaListAlt,
+  FaClipboardList,
+  FaChartBar,
+  FaStar,
+  FaSignOutAlt
 } from "react-icons/fa";
 
 import { NavLink } from "react-router-dom";
@@ -16,54 +17,52 @@ import "./Sidebar.css";
 function Sidebar({ isOpen }) {
 
   const menuItems = [
-    {
-      title: "Dashboard",
-      path: "/manager",
-      icon: <FaHome />,
-    },
-    {
-      title: "Candidates",
-      path: "/manager/candidates",
-      icon: <FaUsers />,
-    },
-    {
-      title: "Qualifiers",
-      path: "/manager/qualifiers",
-      icon: <FaUserCheck />,
-    },
-    {
-      title: "Employees",
-      path: "/manager/employees",
-      icon: <FaUsers />,
-    },
-
-    // NEW
-    {
-      title: "Coding Questions",
-      path: "/manager/coding",
-      icon: <FaCode />,
-    },
-
-    // NEW
-    {
-      title: "MCQ Questions",
-      path: "/manager/mcq",
-      icon: <FaQuestionCircle />,
-    },
-
-    // NEW
-    {
-      title: "Assessment Reports",
-      path: "/manager/assessments",
-      icon: <FaFileAlt />,
-    },
-
-    {
-      title: "Employee Reviews",
-      path: "/manager/reviews",
-      icon: <FaClipboardCheck />,
-    },
-  ];
+  {
+    title: "Dashboard",
+    path: "/manager",
+    icon: <FaHome />,
+  },
+  {
+    title: "Candidates",
+    path: "/manager/candidates",
+    icon: <FaUserTie />,
+  },
+  {
+    title: "Employees",
+    path: "/manager/employees",
+    icon: <FaUsers />,
+  },
+  {
+    title: "Coding Questions",
+    path: "/manager/coding",
+    icon: <FaCode />,
+  },
+  {
+    title: "MCQ Questions",
+    path: "/manager/mcq",
+    icon: <FaListAlt />,
+  },
+  {
+    title: "Interview Questions",
+    path: "/manager/interviewquestions",
+    icon: <FaClipboardList />,
+  },
+  {
+    title: "Assessment Reports",
+    path: "/manager/assessments",
+    icon: <FaChartBar />,
+  },
+  {
+    title: "Qualifiers",
+    path: "/manager/qualifiers",
+    icon: <FaUserCheck />,
+  },
+  {
+    title: "Employee Reviews",
+    path: "/manager/reviews",
+    icon: <FaStar />,
+  },
+];
 
   return (
     <div className={`sidebar ${isOpen ? "open" : "close"}`}>

@@ -3,12 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "./candidate.css";
 import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 
-const QUESTIONS = [
-  "Tell me about yourself.",
-  "Why do you want to join our company?",
-  "What are your strengths?",
-];
-
 const INTERVIEW_TIME = 30;
 const MAX_TAB_SWITCHES = 3;
 const API_URL = "http://localhost:5000/api/interview/upload";
@@ -52,6 +46,57 @@ function InterviewPanel() {
   const submittedRef = useRef(false);
   const interviewStartRef = useRef(null);
   const cameraCovered = useCameraCoverageWarning(videoRef, started && !isSubmitting);
+
+
+
+  const [questions, setQuestions] = useState([]);
+const [loadingQuestions, setLoadingQuestions] = useState(true);
+const [questionError, setQuestionError] = useState("");
+
+  const questionsListRef = useRef([]);
+
+useEffect(() => {
+  questionsListRef.current = questions;
+}, [questions]);
+
+useEffect(() => {
+  const fetchQuestions = async () => {
+    try {
+      setLoadingQuestions(true);
+      setQuestionError("");
+
+      const response = await fetch(
+        "http://localhost:5000/api/candidate/getInterviewQuestions"
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch interview questions");
+      }
+
+      const result = await response.json();
+
+      // Supports either { data: [...] } or a direct array
+      const fetchedQuestions = Array.isArray(result)
+        ? result
+        : result.data;
+
+      if (!Array.isArray(fetchedQuestions) || fetchedQuestions.length === 0) {
+        throw new Error("No interview questions available");
+      }
+
+      setQuestions(
+        fetchedQuestions.filter((q) => q.isActive !== false)
+      );
+    } catch (error) {
+      console.error("Fetch interview questions error:", error);
+      setQuestionError(error.message);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  fetchQuestions();
+}, []);
 
   // --------------------------------------------------
   // MEDIA
@@ -261,15 +306,18 @@ function InterviewPanel() {
   // ANSWERS
   // --------------------------------------------------
 
-  const getCurrentAnswer = useCallback(() => {
-    const index = questionRef.current;
+const getCurrentAnswer = useCallback(() => {
+  const index = questionRef.current;
+  const currentQ = questionsListRef.current[index];
 
-    return {
-      questionNo: index + 1,
-      question: QUESTIONS[index],
-      answer: answerRef.current.trim(),
-    };
-  }, []);
+  return {
+    questionId: currentQ?.id || null,
+    questionNo: index + 1,
+    question: currentQ?.question || "",
+    answer: answerRef.current.trim(),
+  };
+}, []);
+
 
   const saveCurrentAnswer = () => {
     const current = getCurrentAnswer();
@@ -449,7 +497,7 @@ function InterviewPanel() {
 
     const updatedAnswers = saveCurrentAnswer();
 
-    if (questionRef.current < QUESTIONS.length - 1) {
+    if (questionRef.current < questions.length - 1) {
       const next = questionRef.current + 1;
 
       questionRef.current = next;
@@ -547,6 +595,36 @@ function InterviewPanel() {
   // --------------------------------------------------
   // UI
   // --------------------------------------------------
+  if (loadingQuestions) {
+  return (
+    <div className="interview-panel">
+      <div className="media-permission-box">
+        <h2>Loading interview questions...</h2>
+      </div>
+    </div>
+  );
+}
+
+if (questionError) {
+  return (
+    <div className="interview-panel">
+      <div className="media-permission-box">
+        <h2>Unable to load interview questions</h2>
+        <div className="media-error">⚠️ {questionError}</div>
+      </div>
+    </div>
+  );
+}
+
+if (questions.length === 0) {
+  return (
+    <div className="interview-panel">
+      <div className="media-permission-box">
+        <h2>No interview questions available</h2>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="interview-panel">
@@ -730,10 +808,10 @@ function InterviewPanel() {
 
           <div className="question-section">
             <div className="question-number">
-              Question {currentQuestion + 1} / {QUESTIONS.length}
+             Question {currentQuestion + 1} / {questions.length}
             </div>
 
-            <h2>{QUESTIONS[currentQuestion]}</h2>
+            <h2>{questions[currentQuestion]?.question}</h2>
           </div>
 
           <div className="answer-section">
@@ -753,15 +831,16 @@ function InterviewPanel() {
           </div>
 
           <div className="action-section">
-            <button
-              className="primary-button"
-              onClick={nextQuestion}
-              disabled={isSubmitting}
-            >
-              {currentQuestion === QUESTIONS.length - 1
-                ? "Finish Interview"
-                : "Next Question"}
-            </button>
+           <button
+            className="primary-button"
+            onClick={nextQuestion}
+            disabled={isSubmitting}
+          >
+            {currentQuestion === questions.length - 1
+              ? "Finish Interview"
+              : "Next Question"}
+          </button>
+
           </div>
 
           {submissionError && (

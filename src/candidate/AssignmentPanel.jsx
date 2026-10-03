@@ -10,6 +10,20 @@ import "./candidate.css";
 const ASSIGNMENT_DURATION_SECONDS = 300; 
 const MAX_RESUMES = 2;
 
+const formatStarterCode = (value) => {
+  if (!value) return "";
+
+  // Parse JSON-escaped strings only when needed.
+  if (typeof value === "string") {
+    return value
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "    ");
+  }
+
+  return "";
+};
+
 function AssignmentPanel() {
   const navigate = useNavigate();
   
@@ -173,15 +187,21 @@ function AssignmentPanel() {
 
   // Load saved code on question/language change
   useEffect(() => {
-    if (questions.length === 0) return;
+  if (questions.length === 0) return;
 
-    const savedCode = localStorage.getItem(`saved_code_q_${questionIndex}_${language}`);
-    if (savedCode) {
-      setCode(savedCode);
-    } else {
-      setCode(questions[questionIndex]?.starterCode?.[language] || "");
-    }
-  }, [questionIndex, language, questions]);
+  const savedCode = localStorage.getItem(
+    `saved_code_q_${questionIndex}_${language}`
+  );
+
+  if (savedCode !== null) {
+    setCode(savedCode);
+  } else {
+    const starterCode =
+      questions[questionIndex]?.starterCode?.[language] || "";
+
+    setCode(formatStarterCode(starterCode));
+  }
+}, [questionIndex, language, questions]);
 
   // Save code dynamically
   useEffect(() => {
@@ -290,7 +310,8 @@ function AssignmentPanel() {
           title: q.title,
           description: q.description,
           language: chosenLanguage,
-          code: finalCode
+          code: finalCode,
+          testCases: q.testCases || []
         };
       });
 
@@ -776,22 +797,91 @@ function AssignmentPanel() {
     }
   };
 
-  const runCode = async () => {
-    try {
-      // const res = await axios.post("http://localhost:5000/api/interview/compile", {
-      const res = await axios.post("http://localhost:2004/api/compiler/run", {
+  // const runCode = async () => {
+  //   try {
+  //     // const res = await axios.post("http://localhost:5000/api/interview/compile", {
+  //     const res = await axios.post("http://localhost:2004/api/compiler/run", {
+  //       language,
+  //       code,
+  //       input,
+  //     });
+  //     setOutput(res.data.output);
+  //   } catch (err) {
+  //     setOutput(err.response?.data?.error || err.response?.data?.output || "Compilation Failed");
+  //   }
+  //   finally {
+  //   setRunningCode(false);
+  // }
+  // };
+
+//   const runCode = async () => {
+// setRunningCode(true);
+// setOutput("");
+
+// try {
+// const testCases = currentQuestion?.testCases || [];
+
+// const res = await axios.post(
+//   "http://localhost:2004/api/compiler/run",
+//   {
+//     language,
+//     code,
+//     input,
+//     testCases, // Send ALL test cases
+//   }
+// );
+
+// setOutput(
+//   JSON.stringify(res.data, null, 2)
+// );
+
+// } catch (err) {
+// setOutput(
+// err.response?.data?.error ||
+// err.response?.data?.message ||
+// err.response?.data?.output ||
+// "Compilation Failed"
+// );
+// } finally {
+// setRunningCode(false);
+// }
+// };
+
+const runCode = async () => {
+  setRunningCode(true);
+  setOutput("");
+
+  try {
+    const testCases = (currentQuestion?.testCases || []).map((tc) => ({
+      input: tc.input ?? "",
+      expectedOutput: String(tc.output ?? tc.expectedOutput ?? ""),
+      hidden: tc.hidden ?? false,
+    }));
+
+    console.log("Sending test cases:", testCases);
+
+    const res = await axios.post(
+      "http://localhost:2004/api/compiler/run",
+      {
         language,
         code,
         input,
-      });
-      setOutput(res.data.output);
-    } catch (err) {
-      setOutput(err.response?.data?.error || err.response?.data?.output || "Compilation Failed");
-    }
-    finally {
+        testCases,
+      }
+    );
+
+    setOutput(JSON.stringify(res.data, null, 2));
+  } catch (err) {
+    setOutput(
+      err.response?.data?.error ||
+      err.response?.data?.message ||
+      err.response?.data?.output ||
+      "Compilation Failed"
+    );
+  } finally {
     setRunningCode(false);
   }
-  };
+};
 
   // 1. Resume Screen Layout
   if (!started && hasPreviousAssignment && !isSubmitted) {
@@ -950,11 +1040,35 @@ function AssignmentPanel() {
           question={{
             ...currentQuestion,
             input: currentQuestion?.inputFormat,
-            output: currentQuestion?.outputFormat
+            output: currentQuestion?.outputFormat,
+            testCases: currentQuestion?.testCases
           }}
           index={questionIndex}
           total={questions.length}
         />
+        {/* <ProblemPanel
+  question={{
+    ...currentQuestion,
+
+    input: currentQuestion?.inputFormat?.replace(/\\n/g, "\n"),
+
+    output: currentQuestion?.outputFormat?.replace(/\\n/g, "\n"),
+
+    sampleInput: currentQuestion?.sampleInput?.replace(/\\n/g, "\n"),
+
+    sampleOutput: currentQuestion?.sampleOutput?.replace(/\\n/g, "\n"),
+
+    testCases: currentQuestion?.testCases
+      ?.filter((testCase) => testCase.hidden === false)
+      .map((testCase) => ({
+        ...testCase,
+        input: testCase.input?.replace(/\\n/g, "\n"),
+        output: testCase.output?.replace(/\\n/g, "\n"),
+      })),
+  }}
+  index={questionIndex}
+  total={questions.length}
+/> */}
         <section className="editor-panel">
           <div className="editor-toolbar">
             <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--green-dark)" }}>Language: </label>
@@ -994,15 +1108,341 @@ function AssignmentPanel() {
             className="code-editor-textarea"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            spellCheck="false"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoComplete="off"
+            autoCorrect="off"
             aria-label="Code editor"
           />
 
-          <div className="problem-section-label">Custom Terminal Input</div>
-          <textarea className="terminal-input-textarea" value={input} onChange={(e) => setInput(e.target.value)} />
+          {/* <div className="problem-section-label">Custom Terminal Input</div>
+          <textarea className="terminal-input-textarea" value={input} onChange={(e) => setInput(e.target.value)} /> */}
 
           <div className="problem-section-label">Output Console</div>
-          <pre className="output-console">{output}</pre>
+          {/* <pre className="output-console">{output}</pre> */}
+          <div
+  className="output-console"
+  style={{
+    background: "rgba(255, 255, 255, 0.07)",
+    color: "#ffffff",
+    border: "1px solid rgba(255, 255, 255, 0.18)",
+    borderRadius: "12px",
+    padding: "16px",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 25px rgba(0,0,0,0.18)",
+  }}
+>
+  {(() => {
+    try {
+      const result =
+        typeof output === "string"
+          ? JSON.parse(output)
+          : output;
+
+      if (!result?.testResults) {
+        return (
+          <pre
+            style={{
+              color: "#ffffff",
+              background: "transparent",
+              margin: 0,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {output}
+          </pre>
+        );
+      }
+
+      const testCases = currentQuestion?.testCases || [];
+
+      const visibleResults = result.testResults.filter((test) => {
+        const testCase = testCases[test.testCase - 1];
+        return testCase?.hidden === false;
+      });
+
+      const hiddenCount = testCases.filter(
+        (testCase) => testCase.hidden === true
+      ).length;
+
+      const formatOutput = (value) =>
+        String(value ?? "")
+          .replace(/\\r\\n/g, "\n")
+          .replace(/\\n/g, "\n");
+
+      return (
+        <div>
+          {/* Summary */}
+          <div
+            style={{
+              padding: "12px 16px",
+              marginBottom: "14px",
+              borderRadius: "10px",
+
+              background:
+                result.failed === 0
+                  ? "rgba(34, 197, 94, 0.12)"
+                  : "rgba(239, 68, 68, 0.12)",
+
+              border:
+                result.failed === 0
+                  ? "1px solid rgba(74, 222, 128, 0.35)"
+                  : "1px solid rgba(248, 113, 113, 0.35)",
+
+              color: "#ffffff",
+
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+            }}
+          >
+            <strong>
+              {result.failed === 0
+                ? "✓ All Tests Passed"
+                : "✕ Some Tests Failed"}
+            </strong>
+
+            <div
+              style={{
+                marginTop: "5px",
+                fontSize: "13px",
+                color: "rgba(255,255,255,0.7)",
+              }}
+            >
+              {result.passed} / {result.total} test cases passed
+            </div>
+          </div>
+
+          {/* Visible Test Cases */}
+          <div>
+            <div
+              style={{
+                fontWeight: "600",
+                marginBottom: "10px",
+                color: "#ffffff",
+              }}
+            >
+              Visible Test Cases
+            </div>
+
+            {visibleResults.map((test) => (
+              <div
+                key={test.testCase}
+                style={{
+                  marginBottom: "12px",
+                  padding: "14px",
+                  borderRadius: "10px",
+
+                  background: "rgba(255, 255, 255, 0.06)",
+
+                  border: test.passed
+                    ? "1px solid rgba(74, 222, 128, 0.30)"
+                    : "1px solid rgba(248, 113, 113, 0.30)",
+
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.08)",
+                }}
+              >
+                {/* Header */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <strong style={{ color: "#ffffff" }}>
+                    {test.passed ? "✓" : "✕"} Test Case{" "}
+                    {test.testCase}
+                  </strong>
+
+                  <span
+                    style={{
+                      fontWeight: "600",
+                      fontSize: "12px",
+                      color: test.passed
+                        ? "#86efac"
+                        : "#fca5a5",
+                    }}
+                  >
+                    {test.passed ? "PASSED" : "FAILED"}
+                  </span>
+                </div>
+
+                {/* Input */}
+                <div>
+                  <div
+                    className="result-label"
+                    style={{
+                      color: "rgba(255,255,255,0.6)",
+                      fontSize: "12px",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    Input
+                  </div>
+
+                  <pre
+                    className="result-code"
+                    style={{
+                      background: "rgba(0, 0, 0, 0.20)",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: "8px",
+                      padding: "10px",
+                      margin: "0 0 10px",
+                      whiteSpace: "pre-wrap",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {formatOutput(test.input)}
+                  </pre>
+                </div>
+
+                {/* Expected */}
+                <div>
+                  <div
+                    className="result-label"
+                    style={{
+                      color: "rgba(255,255,255,0.6)",
+                      fontSize: "12px",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    Expected Output
+                  </div>
+
+                  <pre
+                    className="result-code"
+                    style={{
+                      background: "rgba(0, 0, 0, 0.20)",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: "8px",
+                      padding: "10px",
+                      margin: "0 0 10px",
+                      whiteSpace: "pre-wrap",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {formatOutput(test.expectedOutput)}
+                  </pre>
+                </div>
+
+                {/* Actual */}
+                <div>
+                  <div
+                    className="result-label"
+                    style={{
+                      color: "rgba(255,255,255,0.6)",
+                      fontSize: "12px",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    Your Output
+                  </div>
+
+                  <pre
+                    className="result-code"
+                    style={{
+                      background: "rgba(0, 0, 0, 0.20)",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: "8px",
+                      padding: "10px",
+                      margin: "0 0 10px",
+                      whiteSpace: "pre-wrap",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {formatOutput(test.actualOutput)}
+                  </pre>
+                </div>
+
+                {/* Error */}
+                {test.error && (
+                  <div>
+                    <div
+                      className="result-label"
+                      style={{
+                        color: "#fca5a5",
+                        fontSize: "12px",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      Error
+                    </div>
+
+                    <pre
+                      className="result-error"
+                      style={{
+                        background: "rgba(239, 68, 68, 0.10)",
+                        color: "#fca5a5",
+                        border:
+                          "1px solid rgba(248,113,113,0.25)",
+                        borderRadius: "8px",
+                        padding: "10px",
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {test.error}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Hidden Test Cases */}
+            {hiddenCount > 0 && (
+              <div
+                style={{
+                  marginTop: "12px",
+                  padding: "11px 14px",
+                  borderRadius: "9px",
+
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border:
+                    "1px solid rgba(255, 255, 255, 0.12)",
+
+                  color: "rgba(255,255,255,0.60)",
+                  fontSize: "13px",
+                  textAlign: "center",
+
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                }}
+              >
+                🔒 {hiddenCount} additional test{" "}
+                {hiddenCount === 1 ? "case is" : "cases are"}{" "}
+                hidden and used for evaluation.
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    } catch (error) {
+      // If output isn't JSON, display it normally
+      return (
+        <pre
+          style={{
+            color: "#ffffff",
+            background: "transparent",
+            margin: 0,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {output}
+        </pre>
+      );
+    }
+  })()}
+</div>
         </section>
       </main>
 
