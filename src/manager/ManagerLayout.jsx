@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
@@ -19,6 +19,10 @@ import "./ManagerLayout.css";
 
 function ManagerLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    window.electronAPI?.hideExitApp?.();
+  }, []);
 
   return (
     <div className="manager-layout">

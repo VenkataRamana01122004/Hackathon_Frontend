@@ -19,7 +19,7 @@ function Topbar({ isOpen, setIsOpen }) {
 
   const logout = () => {
     localStorage.removeItem("user");
-    navigate("/");
+    navigate("/login");
   };
 
   return (

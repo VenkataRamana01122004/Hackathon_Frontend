@@ -24,7 +24,6 @@ function InterviewPanel() {
   const [mediaError, setMediaError] = useState("");
   const [checkingMedia, setCheckingMedia] = useState(false);
 
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
@@ -33,10 +32,7 @@ function InterviewPanel() {
   const mediaStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
-
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const audioAnimationRef = useRef(null);
+  const answerInputRef = useRef(null);
 
   const answerRef = useRef("");
   const questionRef = useRef(0);
@@ -46,6 +42,12 @@ function InterviewPanel() {
   const submittedRef = useRef(false);
   const interviewStartRef = useRef(null);
   const cameraCovered = useCameraCoverageWarning(videoRef, started && !isSubmitting);
+
+  useEffect(() => {
+    if (started && !isSubmitting) {
+      answerInputRef.current?.focus();
+    }
+  }, [started, currentQuestion, isSubmitting]);
 
 
 
@@ -102,24 +104,7 @@ useEffect(() => {
   // MEDIA
   // --------------------------------------------------
 
-  const stopVoiceDetection = useCallback(() => {
-    if (audioAnimationRef.current) {
-      cancelAnimationFrame(audioAnimationRef.current);
-      audioAnimationRef.current = null;
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close().catch(() => {});
-      audioContextRef.current = null;
-    }
-
-    analyserRef.current = null;
-    setIsSpeaking(false);
-  }, []);
-
   const stopMedia = useCallback(() => {
-    stopVoiceDetection();
-
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
@@ -130,7 +115,7 @@ useEffect(() => {
     }
 
     setMediaReady(false);
-  }, [stopVoiceDetection]);
+  }, []);
 
   const checkMediaPermissions = useCallback(async () => {
     setCheckingMedia(true);
@@ -195,56 +180,6 @@ useEffect(() => {
   }, []);
 
   // --------------------------------------------------
-  // VOICE DETECTION
-  // --------------------------------------------------
-
-  const startVoiceDetection = useCallback(async (stream) => {
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-      if (!AudioContext) return;
-
-      const audioContext = new AudioContext();
-      await audioContext.resume();
-      const analyser = audioContext.createAnalyser();
-
-      analyser.fftSize = 2048;
-      analyser.smoothingTimeConstant = 0.8;
-
-      const microphone = audioContext.createMediaStreamSource(stream);
-      microphone.connect(analyser);
-
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-
-      const data = new Uint8Array(analyser.fftSize);
-      const THRESHOLD = 0.04;
-
-      const detect = () => {
-        if (!analyserRef.current || submittedRef.current) return;
-
-        analyserRef.current.getByteTimeDomainData(data);
-
-        let sum = 0;
-
-        for (const value of data) {
-          const normalized = (value - 128) / 128;
-          sum += normalized * normalized;
-        }
-
-        const volume = Math.sqrt(sum / data.length);
-        setIsSpeaking(volume > THRESHOLD);
-
-        audioAnimationRef.current = requestAnimationFrame(detect);
-      };
-
-      detect();
-    } catch (error) {
-      console.error("Voice detection error:", error);
-    }
-  }, []);
-
-  // --------------------------------------------------
   // RECORDING
   // --------------------------------------------------
 
@@ -302,6 +237,24 @@ useEffect(() => {
     });
   }, []);
 
+  const saveLocalRecording = useCallback(async (blob, name) => {
+    if (!blob?.size || !window.electronAPI?.saveRecording) return;
+
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = "";
+    for (let index = 0; index < bytes.length; index += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+    }
+
+    const result = await window.electronAPI.saveRecording({
+      name,
+      data: btoa(binary),
+    });
+    if (!result?.success) {
+      throw new Error(result?.message || "Unable to save local recording.");
+    }
+  }, []);
+
   // --------------------------------------------------
   // ANSWERS
   // --------------------------------------------------
@@ -349,7 +302,6 @@ const getCurrentAnswer = useCallback(() => {
       try {
         const endTime = new Date().toISOString();
 
-        stopVoiceDetection();
         await stopRecording();
 
         if (mediaStreamRef.current) {
@@ -364,6 +316,7 @@ const getCurrentAnswer = useCallback(() => {
         const videoBlob = new Blob(recordedChunksRef.current, {
           type: "video/webm",
         });
+        await saveLocalRecording(videoBlob, `interview-${user?.id || Date.now()}.webm`);
 
         const formData = new FormData();
 
@@ -409,6 +362,7 @@ const getCurrentAnswer = useCallback(() => {
         updatedUser.interviewStatus = "Process";
 
         localStorage.setItem("user", JSON.stringify(updatedUser));
+        localStorage.removeItem("interview_running");
 
         alert("Interview submitted successfully.");
         navigate("/candidate");
@@ -425,7 +379,7 @@ const getCurrentAnswer = useCallback(() => {
       elapsedSeconds,
       navigate,
       stopRecording,
-      stopVoiceDetection,
+      saveLocalRecording,
       user?.id,
     ]
   );
@@ -452,8 +406,6 @@ const getCurrentAnswer = useCallback(() => {
         throw new Error("Camera/microphone stream is unavailable.");
       }
 
-      await startVoiceDetection(stream);
-
       if (!startRecording(stream)) {
         throw new Error("Unable to start video recording.");
       }
@@ -463,6 +415,7 @@ const getCurrentAnswer = useCallback(() => {
         throw new Error(examStartResult.message || "Unable to start the exam.");
       }
 
+      localStorage.setItem("interview_running", "true");
       interviewStartRef.current = new Date().toISOString();
 
       setTimeLeft(INTERVIEW_TIME);
@@ -537,6 +490,42 @@ const getCurrentAnswer = useCallback(() => {
     }, 1000);
 
     return () => clearInterval(timer);
+  }, [started, finishInterview, getCurrentAnswer]);
+
+  useEffect(() => {
+    if (!started || submittedRef.current || !("FaceDetector" in window)) return;
+
+    const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+    const video = videoRef.current;
+    let suspiciousSince = null;
+
+    const checkFacePosition = async () => {
+      if (!video?.videoWidth || submittedRef.current) return;
+
+      try {
+        const faces = await detector.detect(video);
+        const face = faces[0]?.boundingBox;
+        const centerX = face ? (face.x + face.width / 2) / video.videoWidth : null;
+        const centerY = face ? (face.y + face.height / 2) / video.videoHeight : null;
+        const suspicious = !face || centerX < 0.2 || centerX > 0.8 || centerY < 0.15 || centerY > 0.85;
+
+        if (!suspicious) {
+          suspiciousSince = null;
+          return;
+        }
+
+        suspiciousSince ??= Date.now();
+        if (Date.now() - suspiciousSince >= 2000) {
+          alert("Face is not centered in the camera. The interview will be submitted.");
+          finishInterview([...answersRef.current, getCurrentAnswer()]);
+        }
+      } catch (error) {
+        console.error("Face position check failed:", error);
+      }
+    };
+
+    const intervalId = window.setInterval(checkFacePosition, 500);
+    return () => window.clearInterval(intervalId);
   }, [started, finishInterview, getCurrentAnswer]);
 
   // --------------------------------------------------
@@ -770,40 +759,6 @@ if (questions.length === 0) {
               </div>
             )}
 
-            <div
-              className={
-                isSpeaking
-                  ? "voice-status speaking"
-                  : "voice-status silent"
-              }
-            >
-              <div className="voice-icon">🎤</div>
-
-              <div className="voice-text">
-                <strong>
-                  {isSpeaking ? "Voice Detected" : "No Voice Detected"}
-                </strong>
-
-                <span>
-                  {isSpeaking
-                    ? "Please remain silent while typing your answer."
-                    : "Microphone is active and monitoring."}
-                </span>
-              </div>
-
-              <div
-                className={
-                  isSpeaking
-                    ? "voice-indicator active"
-                    : "voice-indicator"
-                }
-              >
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
           </div>
 
           <div className="question-section">
@@ -818,10 +773,13 @@ if (questions.length === 0) {
             <label>Your Answer</label>
 
             <textarea
+              ref={answerInputRef}
               autoFocus
               rows={10}
               value={answer}
               disabled={isSubmitting}
+              readOnly={false}
+              spellCheck
               placeholder="Type your answer here..."
               onChange={(e) => {
                 answerRef.current = e.target.value;

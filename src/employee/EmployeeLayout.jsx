@@ -1,18 +1,23 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import EmployeeNavBar from "./EmployeeNavBar";
 import EmployeeHome from './EmployeeHome';
 
-const EmployeeLayout = ({ logout }) => (
-  <>
-    <EmployeeNavBar logout={logout} />
+const EmployeeLayout = ({ logout }) => {
+  useEffect(() => {
+    window.electronAPI?.hideExitApp?.();
+  }, []);
 
-    <Routes>
-      <Route path="/" element={<EmployeeHome />} />
-      <Route path="profile" element={<h2>Profile</h2>} />
+  return <>
+      <EmployeeNavBar logout={logout} />
 
-      <Route path="*" element={<Navigate to="/employee" replace />} />
-    </Routes>
-  </>
-);
+      <Routes>
+        <Route path="/" element={<EmployeeHome />} />
+        <Route path="profile" element={<h2>Profile</h2>} />
+
+        <Route path="*" element={<Navigate to="/employee" replace />} />
+      </Routes>
+    </>;
+};
 
 export default EmployeeLayout;

@@ -80,6 +80,8 @@
   font-size: 0.95rem;
   font-family: inherit;
   color: var(--text-primary);
+  caret-color: var(--accent-light);
+  cursor: text;
   background: rgba(255, 255, 255, 0.08);
   width: 100%;
 }
@@ -1354,6 +1356,10 @@
   line-height: 1.5;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
+  caret-color: var(--accent-light);
+  cursor: text;
+  user-select: text;
+  pointer-events: auto;
   resize: vertical;
 }
 
