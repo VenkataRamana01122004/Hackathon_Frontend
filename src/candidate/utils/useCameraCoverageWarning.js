@@ -13,7 +13,7 @@ export default function useCameraCoverageWarning(videoRef, active) {
     canvas.width = 160;
     canvas.height = 90;
     const context = canvas.getContext("2d", { willReadFrequently: true });
-    let darkSamples = 0;
+    let coveredSamples = 0;
     let timer;
 
     const inspectFrame = () => {
@@ -35,11 +35,12 @@ export default function useCameraCoverageWarning(videoRef, active) {
           const count = pixels.length / 4;
           const average = total / count;
           const variance = squaredTotal / count - average * average;
-          const likelyCovered =
-            (average < 35 && variance < 1200) || variance < 35;
+          // A low-variance frame can be a valid blurred camera preview. Only
+          // flag frames that are both genuinely dark and nearly uniform.
+          const likelyCovered = average < 20 && variance < 500;
 
-          darkSamples = likelyCovered ? darkSamples + 1 : 0;
-          setCameraCovered(darkSamples >= 3);
+          coveredSamples = likelyCovered ? coveredSamples + 1 : 0;
+          setCameraCovered(coveredSamples >= 6);
         } catch {
           // Camera frame access can be unavailable briefly while the stream starts.
         }

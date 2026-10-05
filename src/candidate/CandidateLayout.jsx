@@ -9,18 +9,8 @@ import BitsAssessment from "./BitsAssessment";
 
 const CandidateLayout = ({ logout }) => {
   useEffect(() => {
-    const examInProgress = [
-      "exam_running",
-      "assignment_running",
-      "interview_running"
-    ].some((key) => localStorage.getItem(key) === "true");
-    const exitAllowed = sessionStorage.getItem("exit_application_allowed") !== "false";
-
-    if (examInProgress || !exitAllowed) {
-      window.electronAPI?.hideExitApp?.();
-    } else {
-      window.electronAPI?.showExitApp?.();
-    }
+    // The exit control belongs on the logged-out login screen only.
+    window.electronAPI?.hideExitApp?.();
   }, []);
 
   return <>

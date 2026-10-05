@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
-import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 
 const INTERVIEW_TIME = 30;
 const MAX_TAB_SWITCHES = 3;
@@ -48,7 +47,6 @@ function InterviewPanel() {
 
   const submittedRef = useRef(false);
   const interviewStartRef = useRef(null);
-  const cameraCovered = useCameraCoverageWarning(videoRef, started && !isSubmitting);
 
   useEffect(() => {
     if (started && !isSubmitting) {
@@ -253,12 +251,17 @@ useEffect(() => {
       binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
     }
 
-    const result = await window.electronAPI.saveRecording({
-      name,
-      data: btoa(binary),
-    });
-    if (!result?.success) {
-      throw new Error(result?.message || "Unable to save local recording.");
+    try {
+      const result = await window.electronAPI.saveRecording({
+        name,
+        data: btoa(binary),
+      });
+      if (!result?.success) {
+        console.warn("Local interview recording was not saved:", result?.message);
+      }
+    } catch (error) {
+      // Local recording is supplementary; never block server submission.
+      console.warn("Local interview recording unavailable:", error.message);
     }
   }, []);
 
@@ -304,9 +307,9 @@ const getCurrentAnswer = useCallback(() => {
 
       submittedRef.current = true;
       setIsSubmitting(true);
-      await window.electronAPI?.stopExam?.();
 
       try {
+        await window.electronAPI?.stopExam?.();
         const endTime = new Date().toISOString();
 
         await stopRecording();
@@ -328,6 +331,10 @@ const getCurrentAnswer = useCallback(() => {
         const formData = new FormData();
 
         formData.append("userId", String(user?.id || ""));
+        formData.append(
+          "username",
+          String(user?.username || user?.email || user?.candidateId || "guest")
+        );
         formData.append("submittedAt", endTime);
         formData.append(
           "interviewStartTime",
@@ -507,42 +514,6 @@ const getCurrentAnswer = useCallback(() => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [started, finishInterview, getCurrentAnswer]);
-
-  useEffect(() => {
-    if (!started || submittedRef.current || !("FaceDetector" in window)) return;
-
-    const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-    const video = videoRef.current;
-    let suspiciousSince = null;
-
-    const checkFacePosition = async () => {
-      if (!video?.videoWidth || submittedRef.current) return;
-
-      try {
-        const faces = await detector.detect(video);
-        const face = faces[0]?.boundingBox;
-        const centerX = face ? (face.x + face.width / 2) / video.videoWidth : null;
-        const centerY = face ? (face.y + face.height / 2) / video.videoHeight : null;
-        const suspicious = !face || centerX < 0.2 || centerX > 0.8 || centerY < 0.15 || centerY > 0.85;
-
-        if (!suspicious) {
-          suspiciousSince = null;
-          return;
-        }
-
-        suspiciousSince ??= Date.now();
-        if (Date.now() - suspiciousSince >= 2000) {
-          alert("Face is not centered in the camera. The interview will be submitted.");
-          finishInterview([...answersRef.current, getCurrentAnswer()]);
-        }
-      } catch (error) {
-        console.error("Face position check failed:", error);
-      }
-    };
-
-    const intervalId = window.setInterval(checkFacePosition, 500);
-    return () => window.clearInterval(intervalId);
   }, [started, finishInterview, getCurrentAnswer]);
 
   // --------------------------------------------------
@@ -770,12 +741,6 @@ if (questions.length === 0) {
               )}
             </div>
 
-            {cameraCovered && (
-              <div className="media-error" role="alert">
-                ⚠️ Camera view appears covered or too dark. Please uncover the camera.
-              </div>
-            )}
-
           </div>
 
           <div className="question-section">
@@ -799,6 +764,7 @@ if (questions.length === 0) {
               placeholder="Type your answer here..."
               onChange={handleAnswerInput}
               onInput={handleAnswerInput}
+              onKeyDown={(event) => event.stopPropagation()}
             />
           </div>
 

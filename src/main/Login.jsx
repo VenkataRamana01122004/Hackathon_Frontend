@@ -8,17 +8,11 @@ function Login({ onLogin }) {
 
   useEffect(() => {
     const exitAllowed = sessionStorage.getItem("exit_application_allowed") !== "false";
-    const syncExitButton = () => {
-      if (exitAllowed) {
-        window.electronAPI?.showExitApp?.();
-      } else {
-        window.electronAPI?.hideExitApp?.();
-      }
-    };
-
-    syncExitButton();
-    const retryId = window.setTimeout(syncExitButton, 150);
-    return () => window.clearTimeout(retryId);
+    if (exitAllowed) {
+      window.electronAPI?.showExitApp?.();
+    } else {
+      window.electronAPI?.hideExitApp?.();
+    }
   }, []);
 
   const [data, setData] = useState({

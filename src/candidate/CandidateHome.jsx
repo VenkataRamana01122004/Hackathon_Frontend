@@ -38,17 +38,6 @@ function CandidateHome() {
   useEffect(() => {
     const exitAllowed = !anyExamStarted || allExamsCompleted;
     sessionStorage.setItem("exit_application_allowed", String(exitAllowed));
-    const syncExitButton = async () => {
-      if (exitAllowed) {
-        await window.electronAPI?.stopExam?.();
-        await window.electronAPI?.showExitApp?.();
-      } else {
-        await window.electronAPI?.hideExitApp?.();
-      }
-    };
-    syncExitButton().catch((error) => {
-      console.error("Unable to synchronize exit button:", error);
-    });
 
     if (!mcqCompleted) {
       localStorage.removeItem("mcq_result");

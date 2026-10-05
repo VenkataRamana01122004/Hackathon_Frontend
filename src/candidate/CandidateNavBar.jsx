@@ -48,19 +48,13 @@ function CandidateNavBar({ logout }) {
             "exit_application_allowed",
             String(!hasStartedExam || allExamsCompleted)
         );
-        if (!hasStartedExam || allExamsCompleted) {
-                // Ensure Electron has ended any stale exam state before showing exit.
+            if (!hasStartedExam || allExamsCompleted) {
                 await window.electronAPI?.stopExam?.();
-                window.electronAPI?.showExitApp?.();
-            } else {
-                window.electronAPI?.hideExitApp?.();
             }
+            // Keep the exit control hidden throughout the authenticated session.
+            await window.electronAPI?.hideExitApp?.();
             logout();
             navigate("/login");
-            if (!hasStartedExam || allExamsCompleted) {
-                // The login page can mount before the exit window finishes updating.
-                window.setTimeout(() => window.electronAPI?.showExitApp?.(), 100);
-            }
     };
 
     return (
