@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProblemPanel from "./coding/ProblemPanel.jsx";
 import DraggableCamWindow from "./coding/DraggableCamWindow.jsx";
-import { getProgress, getRoundLocks, recordCodingResult } from "./utils/progress.js";
+import { recordCodingResult } from "./utils/progress.js";
 import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 import "./candidate.css";
 

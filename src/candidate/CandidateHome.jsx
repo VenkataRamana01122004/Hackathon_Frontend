@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
 
@@ -14,7 +14,14 @@ function CandidateHome() {
 
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = (() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("user") || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  })();
 
 
   const bitsStatus = normalizeStatus(user.bitsExamStatus);
@@ -31,7 +38,17 @@ function CandidateHome() {
   useEffect(() => {
     const exitAllowed = !anyExamStarted || allExamsCompleted;
     sessionStorage.setItem("exit_application_allowed", String(exitAllowed));
-    window.electronAPI?.hideExitApp?.();
+    const syncExitButton = async () => {
+      if (exitAllowed) {
+        await window.electronAPI?.stopExam?.();
+        await window.electronAPI?.showExitApp?.();
+      } else {
+        await window.electronAPI?.hideExitApp?.();
+      }
+    };
+    syncExitButton().catch((error) => {
+      console.error("Unable to synchronize exit button:", error);
+    });
 
     if (!mcqCompleted) {
       localStorage.removeItem("mcq_result");

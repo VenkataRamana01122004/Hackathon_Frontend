@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./candidate.css";
 import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
@@ -10,7 +10,14 @@ const API_URL = "http://localhost:5000/api/interview/upload";
 function InterviewPanel() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = (() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("user") || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  })();
 
   const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -355,9 +362,13 @@ const getCurrentAnswer = useCallback(() => {
           throw new Error(message);
         }
 
-        const updatedUser = JSON.parse(
-          localStorage.getItem("user") || "{}"
-        );
+        let updatedUser = {};
+        try {
+          const parsed = JSON.parse(localStorage.getItem("user") || "{}");
+          updatedUser = parsed && typeof parsed === "object" ? parsed : {};
+        } catch (error) {
+          console.error("Unable to update candidate interview status:", error);
+        }
 
         updatedUser.interviewStatus = "Process";
 
@@ -461,6 +472,12 @@ const getCurrentAnswer = useCallback(() => {
     } else {
       finishInterview(updatedAnswers);
     }
+  };
+
+  const handleAnswerInput = (event) => {
+    const nextAnswer = event.currentTarget.value;
+    answerRef.current = nextAnswer;
+    setAnswer(nextAnswer);
   };
 
   // --------------------------------------------------
@@ -778,13 +795,10 @@ if (questions.length === 0) {
               rows={10}
               value={answer}
               disabled={isSubmitting}
-              readOnly={false}
               spellCheck
               placeholder="Type your answer here..."
-              onChange={(e) => {
-                answerRef.current = e.target.value;
-                setAnswer(e.target.value);
-              }}
+              onChange={handleAnswerInput}
+              onInput={handleAnswerInput}
             />
           </div>
 

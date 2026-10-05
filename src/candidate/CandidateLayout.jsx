@@ -9,7 +9,18 @@ import BitsAssessment from "./BitsAssessment";
 
 const CandidateLayout = ({ logout }) => {
   useEffect(() => {
-    window.electronAPI?.hideExitApp?.();
+    const examInProgress = [
+      "exam_running",
+      "assignment_running",
+      "interview_running"
+    ].some((key) => localStorage.getItem(key) === "true");
+    const exitAllowed = sessionStorage.getItem("exit_application_allowed") !== "false";
+
+    if (examInProgress || !exitAllowed) {
+      window.electronAPI?.hideExitApp?.();
+    } else {
+      window.electronAPI?.showExitApp?.();
+    }
   }, []);
 
   return <>
