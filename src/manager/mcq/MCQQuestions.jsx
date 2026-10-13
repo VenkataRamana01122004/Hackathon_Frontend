@@ -171,6 +171,8 @@ function MCQQuestions() {
 
           <tr>
 
+            <th>S No</th>
+            
             <th>Question</th>
 
             <th>Category</th>
@@ -180,6 +182,8 @@ function MCQQuestions() {
             <th>Marks</th>
 
             <th>Type</th>
+
+            <th>Created</th>
 
             <th>Status</th>
 
@@ -191,10 +195,11 @@ function MCQQuestions() {
 
           <tbody>
 
-          {filteredQuestions.map((mcq)=>(
+          {filteredQuestions.map((mcq,i)=>(
 
             <tr key={mcq.id}>
 
+               <td>{i + 1}</td>
               <td>{mcq.question?.slice(0, 15)}...</td>
 
               <td>{mcq.category}</td>
@@ -204,6 +209,12 @@ function MCQQuestions() {
               <td>{mcq.marks}</td>
 
               <td>{mcq.questionType}</td>
+
+            <td>
+              {mcq.createdAt
+                ? new Date(mcq.createdAt).toISOString().split("T")[0]
+                : ""}
+            </td>
 
               <td>
 

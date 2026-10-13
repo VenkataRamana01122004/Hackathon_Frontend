@@ -282,11 +282,13 @@ function InterviewQuestions() {
         <table className="manager-table interview-table">
           <thead>
             <tr>
+              <th>S No</th>
               <th>Question</th>
               <th>Category</th>
               <th>Difficulty</th>
               <th>Type</th>
               <th>Marks</th>
+              <th>Created</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -337,6 +339,12 @@ function InterviewQuestions() {
                   </td>
 
                   <td>{q.marks}</td>
+
+                  <td>
+              {q.createdAt
+                ? new Date(q.createdAt).toISOString().split("T")[0]
+                : ""}
+            </td>
 
                   <td>
                     <span

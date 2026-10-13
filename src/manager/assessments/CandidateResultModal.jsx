@@ -470,7 +470,7 @@ function CandidateResultModal({ id, close }) {
 
           {/* ================= INTERVIEW ================= */}
 
-          <div
+          {/* <div
             style={{
               border: "1px solid #ddd",
               borderRadius: "10px",
@@ -491,7 +491,7 @@ function CandidateResultModal({ id, close }) {
                 )}
               </pre>
             )}
-          </div>
+          </div> */}
 
           {/* ================= SECURITY ================= */}
 

@@ -183,6 +183,8 @@ function CodingQuestions() {
 
             <tr>
 
+              <th>S No</th>
+              
               <th>Title</th>
 
               <th>Category</th>
@@ -193,6 +195,8 @@ function CodingQuestions() {
 
               <th>Time</th>
 
+              <th>Created</th>
+              
               <th>Status</th>
 
               <th>Action</th>
@@ -203,10 +207,12 @@ function CodingQuestions() {
 
           <tbody>
 
-            {filteredQuestions.map((question) => (
+            {filteredQuestions.map((question,i) => (
 
               <tr key={question.id}>
 
+                <td>{i+1}</td>
+                
                 <td>{question.title}</td>
 
                 <td>{question.category}</td>
@@ -216,6 +222,12 @@ function CodingQuestions() {
                 <td>{question.marks}</td>
 
                 <td>{question.timeLimit} sec</td>
+
+                <td>
+              {question.createdAt
+                ? new Date(question.createdAt).toISOString().split("T")[0]
+                : ""}
+            </td>
 
                 <td>
 
