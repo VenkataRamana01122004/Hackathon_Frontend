@@ -175,3 +175,63 @@
     min-width: 1000px;
   }
 }
+
+
+.schedule-action-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.schedule-questions-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.18);
+  transition: all 0.2s ease;
+}
+
+.schedule-questions-btn:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+  transform: translateY(-1px);
+}
+
+.schedule-questions-btn:active {
+  transform: translateY(0);
+}
+
+.schedule-questions-btn:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.3);
+  outline-offset: 3px;
+}
+
+.status.random-schedule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid #d1fae5;
+  border-radius: 20px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.random-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+}

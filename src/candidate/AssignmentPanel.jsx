@@ -119,49 +119,119 @@ function AssignmentPanel() {
     }
   }, []);
 
+  const [metrics, setMetrics] = useState({
+    tabSwitches: tabSwitchCountRef.current,
+    blurEvents: blurCountRef.current,
+    fullscreenExits: fullscreenExitCountRef.current,
+    copyAttempts: 0,
+    cutAttempts: 0,
+    pasteAttempts: 0,
+    rightClicks: 0,
+    mouseClicks: 0,
+    mouseMoves: 0,
+    keyPresses: 0,
+    blockedShortcuts: 0,
+    idleTime: 0
+  });
+
   const currentQuestion = questions[questionIndex];
 
   // Load Questions
-  useEffect(() => {
-    const loadQuestions = async () => {
-      setLoadingQuestions(true);
-      try {
-        const cachedQuestions = localStorage.getItem("assignment_questions");
-        if (cachedQuestions) {
-          const parsed = JSON.parse(cachedQuestions);
-          if (parsed && parsed.length > 0) {
-            setQuestions(parsed);
-            questionsRef.current = parsed;
-            setLoadingQuestions(false);
-            return;
-          }
-        }
+useEffect(() => {
+  const loadQuestions = async () => {
+    setLoadingQuestions(true);
+    try {
+      const storedUser = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
 
-        const res = await axios.get("http://localhost:5000/api/candidate/getquestions");
-        const questionList = res.data.data || res.data || [];
+      const candidateId = storedUser.id;
 
-        localStorage.setItem("assignment_questions", JSON.stringify(questionList));
-
-        setQuestions(questionList);
-        questionsRef.current = questionList;
-      } catch (err) {
-        console.error("Failed to load coding questions:", err);
-        alert("Unable to load coding questions.");
-      } finally {
-        setLoadingQuestions(false);
+      if (!candidateId) {
+        throw new Error(
+          "Candidate ID not found. Please log in again."
+        );
       }
-    };
 
-    loadQuestions();
+      // Reuse cached questions only for the same candidate
+      const cachedCandidateId = localStorage.getItem(
+        "assignment_questions_candidate_id"
+      );
 
-    setSystemInfo({
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      screenResolution: `${window.screen.width}x${window.screen.height}`,
-      windowSize: `${window.innerWidth}x${window.innerHeight}`,
-      cores: navigator.hardwareConcurrency || "N/A"
-    });
-  }, []);
+      const cachedQuestions = localStorage.getItem(
+        "assignment_questions"
+      );
+
+      if (
+        cachedCandidateId === String(candidateId) &&
+        cachedQuestions
+      ) {
+        const parsed = JSON.parse(cachedQuestions);
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setQuestions(parsed);
+          questionsRef.current = parsed;
+          setLoadingQuestions(false);
+          return;
+        }
+      }
+
+      // Pass candidate ID to the backend
+      const res = await axios.get(
+        "http://localhost:5000/api/candidate/getquestions",
+        {
+          params: {
+            candidate_id: candidateId,
+          },
+        }
+      );
+
+      const questionList = res.data?.data || [];
+
+      if (!Array.isArray(questionList)) {
+        throw new Error(
+          "Invalid coding questions response from server."
+        );
+      }
+
+      localStorage.setItem(
+        "assignment_questions",
+        JSON.stringify(questionList)
+      );
+
+      localStorage.setItem(
+        "assignment_questions_candidate_id",
+        String(candidateId)
+      );
+
+      setQuestions(questionList);
+      questionsRef.current = questionList;
+    } catch (err) {
+      console.error(
+        "Failed to load coding questions:",
+        err.response?.data || err.message
+      );
+
+      alert(
+        err.response?.data?.message ||
+        err.message ||
+        "Unable to load coding questions."
+      );
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  loadQuestions();
+
+  setSystemInfo({
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    screenResolution: `${window.screen.width}x${window.screen.height}`,
+    windowSize: `${window.innerWidth}x${window.innerHeight}`,
+    cores: navigator.hardwareConcurrency || "N/A",
+  });
+}, []);
 
   // Update question Index tracking in storage
   useEffect(() => {
@@ -195,11 +265,22 @@ function AssignmentPanel() {
     }
   }, [code, started, questionIndex, language, currentQuestion]);
 
-  // The proctoring counters themselves live in refs (used directly by the
-  // tab-switch/fullscreen-exit limits and the submission payload) and don't
-  // need a React state mirror now that the on-screen metrics panel is gone.
-  // Kept as a no-op so the many call sites below don't need to change.
-  const syncMetrics = () => {};
+  const syncMetrics = () => {
+    setMetrics({
+      tabSwitches: tabSwitchCountRef.current,
+      blurEvents: blurCountRef.current,
+      fullscreenExits: fullscreenExitCountRef.current,
+      copyAttempts: copyAttemptsRef.current,
+      cutAttempts: cutAttemptsRef.current,
+      pasteAttempts: pasteAttemptsRef.current,
+      rightClicks: rightClickAttemptsRef.current,
+      mouseClicks: mouseClickCountRef.current,
+      mouseMoves: mouseMoveCountRef.current,
+      keyPresses: keyboardLogsRef.current.length,
+      blockedShortcuts: blockedShortcutAttemptsRef.current,
+      idleTime: idleTimeSecondsRef.current
+    });
+  };
 
   const startRecording = async () => {
     try {
@@ -1077,6 +1158,15 @@ const runCode = async () => {
             >
               {runningCode ? "Running..." : "Run Code"}
             </button>
+            <button
+              type="button"
+              className="btn btn--submit"
+              style={{ width: "auto", marginLeft: "auto" }}
+              onClick={() => submitCode("manual")}
+              disabled={submitting}
+            >
+              {submitting ? "Processing Submit..." : "Submit Examination"}
+            </button>
           </div>
 
           <textarea
@@ -1104,16 +1194,16 @@ const runCode = async () => {
                   return <pre className="output-plain">{output}</pre>;
                 }
 
-                const testCases = currentQuestion?.testCases || [];
+      const testCases = currentQuestion?.testCases || [];
 
-                const visibleResults = result.testResults.filter((test) => {
-                  const testCase = testCases[test.testCase - 1];
-                  return testCase?.hidden === false;
-                });
+      const visibleResults = result.testResults.filter((test) => {
+        const testCase = testCases[test.testCase - 1];
+        return testCase?.hidden === false;
+      });
 
-                const hiddenCount = testCases.filter(
-                  (testCase) => testCase.hidden === true
-                ).length;
+      const hiddenCount = testCases.filter(
+        (testCase) => testCase.hidden === true
+      ).length;
 
                 const formatOutput = (value) =>
                   String(value ?? "")
@@ -1218,6 +1308,16 @@ const runCode = async () => {
         videoRef={videoPreviewRef}
         onVideoRef={attachVideoElement}
       />
+
+      <div className="security-panel coding-security" style={{ margin: "20px 28px 28px" }}>
+        <h5>Proctoring Metrics (Active Diagnostics)</h5>
+        <div className="coding-security-grid">
+          <div className={`security-row ${metrics.tabSwitches > 0 ? "security-row--alert" : ""}`}><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
+          <div className={`security-row ${metrics.blurEvents > 0 ? "security-row--alert" : ""}`}><span>Blur events</span><strong>{metrics.blurEvents}</strong></div>
+          <div className={`security-row ${metrics.fullscreenExits > 0 ? "security-row--alert" : ""}`}><span>Fullscreen exits</span><strong>{metrics.fullscreenExits} / 3</strong></div>
+          <div className={`security-row ${cameraCovered ? "security-row--alert" : ""}`}><span>Camera status</span><strong>{cameraCovered ? "Covered" : "Clear"}</strong></div>
+        </div>
+      </div>
     </div>
   );
 }

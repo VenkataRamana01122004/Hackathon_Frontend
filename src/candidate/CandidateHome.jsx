@@ -10,6 +10,26 @@ const isCompletedStatus = (status) =>
 const displayStatus = (status, completed) =>
   completed ? "COMPLETED" : status.toUpperCase();
 
+
+const isExamTimeReached = (examDate, examTime) => {
+  if (!examDate || !examTime) return false;
+
+  const scheduledDateTime = new Date(
+    `${examDate}T${examTime}`
+  );
+
+  if (Number.isNaN(scheduledDateTime.getTime())) {
+    return false;
+  }
+
+  const now = new Date();
+
+  const startTime = scheduledDateTime.getTime();
+  const endTime = startTime + 100 * 60 * 1000;
+
+  return now >= startTime && now <= endTime;
+};
+
 function CandidateHome() {
 
   const navigate = useNavigate();
@@ -29,6 +49,15 @@ function CandidateHome() {
   const codingStatus = normalizeStatus(user.codingExamStatus);
 
   const interviewStatus = normalizeStatus(user.interviewStatus);
+
+  const examDate = user.examDate;
+const examTime = user.examTime;
+
+const examTimeReached = isExamTimeReached(
+  user.examDate,
+  user.examTime
+);
+
   const mcqCompleted = isCompletedStatus(bitsStatus);
   const codingCompleted = isCompletedStatus(codingStatus);
   const interviewCompleted = isCompletedStatus(interviewStatus);
@@ -59,16 +88,21 @@ function CandidateHome() {
   }, [anyExamStarted, allExamsCompleted, mcqCompleted, codingCompleted]);
 
 
-  // Round permissions
-  const canStartMcq = !mcqCompleted;
+// Round permissions
+const canStartMcq = !mcqCompleted && examTimeReached;
 
+const canStartCoding =
+  mcqCompleted && !codingCompleted && examTimeReached;
 
-  const canStartCoding =
-    mcqCompleted && !codingCompleted;
+const canStartInterview =
+  mcqCompleted &&
+  codingCompleted &&
+  !interviewCompleted &&
+  examTimeReached;
 
 
   // const canStartInterview = interviewStatus === "scheduled";
-  const canStartInterview = mcqCompleted && codingCompleted && !interviewCompleted;
+  // const canStartInterview = mcqCompleted && codingCompleted && !interviewCompleted;
 
 
 
@@ -93,6 +127,15 @@ function CandidateHome() {
       <h2>
         Candidate Home
       </h2>
+
+      {!examTimeReached && (
+  <div className="round-requirements">
+    Your exam is scheduled for{" "}
+    {examDate || "a date not specified"} at{" "}
+    {examTime || "a time not specified"}.
+    You can start when the scheduled time arrives.
+  </div>
+)}
 
 
       <p
@@ -141,36 +184,21 @@ function CandidateHome() {
             Objective questions on core fundamentals with proctoring.
           </p>
 
-
-
           <button
-
             className="btn btn--submit round-btn"
-
             disabled={!canStartMcq}
-
             onClick={() => navigate("/candidate/bitsassessment")}
-
           >
-
-            {canStartMcq
-              ? "Start Test"
-              : "Completed"}
-
+            {mcqCompleted
+              ? "Completed"
+              : !examTimeReached
+              ? "Not Started Yet"
+              : "Start Test"}
           </button>
-
-
 
         </div>
 
-
-
-
-
-
-
         {/* ================= ROUND 2 ================= */}
-
 
         <div
 

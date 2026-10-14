@@ -1,175 +1,123 @@
 import { useState } from "react";
-import { FaTimes, FaCalendarAlt, FaClock, FaUserTie } from "react-icons/fa";
+import {
+  FaTimes,
+  FaCalendarAlt,
+  FaClock,
+} from "react-icons/fa";
+import axios from "axios";
 import "./ScheduleModal.css";
 
-function ScheduleModal({ candidate, onClose }) {
-
-  const [interviewer, setInterviewer] = useState("");
-  const [round, setRound] = useState("Technical Round");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [mode, setMode] = useState("Google Meet");
-  const [remarks, setRemarks] = useState("");
+function ScheduleModal({ candidate, onClose, onSchedule }) {
+  const [date, setDate] = useState(candidate?.examDate || "");
+  const [time, setTime] = useState(candidate?.examTime || "");
+  const [loading, setLoading] = useState(false);
+  const [isRandomSchedule, setIsRandomSchedule] = useState(
+  candidate?.isRandomSchedule ?? false
+);
 
   if (!candidate) return null;
 
-  const scheduleInterview = () => {
+  const scheduleInterview = async () => {
+    if (!isRandomSchedule && (!date || !time)) {
+  alert("Please select both date and time.");
+  return;
+}
 
-    alert(`Interview scheduled successfully for ${candidate.name}`);
+    try {
+      setLoading(true);
 
-    onClose();
+      await onSchedule({
+  ...candidate,
+  examDate: date,
+  examTime: time,
+  isRandomSchedule,
+});
 
+setDate("");
+setTime("");
+setIsRandomSchedule(false);
+
+      alert(`Interview scheduled successfully for ${candidate.fullName}`);
+      onClose();
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to schedule interview."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-
     <div className="schedule-overlay">
-
       <div className="schedule-modal">
-
         <div className="schedule-header">
-
           <h2>Schedule Interview</h2>
-
-          <button onClick={onClose}>
+          <button onClick={onClose} disabled={loading}>
             <FaTimes />
           </button>
-
         </div>
 
         <div className="candidate-box">
-
-          <h3>{candidate.name}</h3>
-
-          <p>{candidate.role}</p>
-
+          <h3>{candidate.fullName}</h3>
+          <p>
+            {candidate.isRandomSchedule
+              ? "Random Schedule"
+              : "Manual Schedule"}
+          </p>
         </div>
 
         <div className="form-grid">
-
           <div className="input-group">
-
             <label>
-
-              <FaUserTie />
-
-              Interviewer
-
+              <FaCalendarAlt /> Date
             </label>
-
-            <select
-              value={interviewer}
-              onChange={(e)=>setInterviewer(e.target.value)}
-            >
-              <option value="">Select Interviewer</option>
-              <option>Rahul Verma</option>
-              <option>Anjali Reddy</option>
-              <option>Suresh Kumar</option>
-              <option>Monisha</option>
-            </select>
-
-          </div>
-
-          <div className="input-group">
-
-            <label>Interview Round</label>
-
-            <select
-              value={round}
-              onChange={(e)=>setRound(e.target.value)}
-            >
-              <option>Technical Round</option>
-              <option>HR Round</option>
-              <option>Manager Round</option>
-            </select>
-
-          </div>
-
-          <div className="input-group">
-
-            <label>
-
-              <FaCalendarAlt />
-
-              Date
-
-            </label>
-
             <input
               type="date"
               value={date}
-              onChange={(e)=>setDate(e.target.value)}
+              onChange={(e) => setDate(e.target.value)}
+              required
             />
-
           </div>
 
           <div className="input-group">
-
             <label>
-
-              <FaClock />
-
-              Time
-
+              <FaClock /> Time
             </label>
-
             <input
               type="time"
               value={time}
-              onChange={(e)=>setTime(e.target.value)}
+              onChange={(e) => setTime(e.target.value)}
+              required
             />
-
           </div>
-
-          <div className="input-group">
-
-            <label>Meeting Type</label>
-
-            <select
-              value={mode}
-              onChange={(e)=>setMode(e.target.value)}
-            >
-              <option>Google Meet</option>
-              <option>Microsoft Teams</option>
-              <option>Zoom</option>
-              <option>Offline</option>
-            </select>
-
-          </div>
-
-          <div className="input-group full-width">
-
-            <label>Remarks</label>
-
-            <textarea
-              rows="4"
-              value={remarks}
-              onChange={(e)=>setRemarks(e.target.value)}
-            />
-
-          </div>
-
+          <div className="input-group random-checkbox">
+  <label>
+    <input
+      type="checkbox"
+      checked={isRandomSchedule}
+      onChange={(e) => setIsRandomSchedule(e.target.checked)}
+      disabled={loading}
+    />
+    Enable Random Schedule
+  </label>
+</div>
         </div>
 
         <div className="schedule-footer">
-
           <button
             className="schedule-save"
             onClick={scheduleInterview}
+            disabled={loading}
           >
-
-            Schedule Interview
-
+            {loading ? "Saving..." : "Schedule Interview"}
           </button>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default ScheduleModal;

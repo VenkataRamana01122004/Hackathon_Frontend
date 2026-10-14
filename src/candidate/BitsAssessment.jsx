@@ -554,9 +554,15 @@ const handleFullscreenChange = () => {
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/candidate/getMcqQuestions"
-      );
+      // const response = await axios.get(
+      //   "http://localhost:5000/api/candidate/getMcqQuestions"
+      // );
+
+      const storedUser = JSON.parse( localStorage.getItem("user") || "{}" ); 
+      const candidateId = storedUser.id; 
+      if (!candidateId) 
+        { throw new Error("Candidate ID not found. Please log in again."); } 
+      const response = await axios.get( "http://localhost:5000/api/candidate/getMcqQuestions", { params: { candidate_id: candidateId, }, } );
 
       const rawData = response.data?.data || response.data;
       if (!Array.isArray(rawData)) {

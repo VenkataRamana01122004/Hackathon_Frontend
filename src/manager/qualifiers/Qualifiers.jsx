@@ -4,7 +4,7 @@ import axios from "axios";
 
 import SearchBar from "../components/SearchBar";
 import FilterBar from "../components/FilterBar";
-import CandidateTable from "../components/CandidateTable";
+import CandidateTableQualifier from "../components/CandidateTableQualifier";
 import CandidateModal from "../components/CandidateModal";
 import ResumeModal from "../components/ResumeModal";
 import AssignRoleModal from "../components/AssignRoleModal";
@@ -123,7 +123,7 @@ const fetchCandidates = async () => {
 
       </div>
 
-      <CandidateTable
+      <CandidateTableQualifier
 
         candidates={filteredCandidates}
 

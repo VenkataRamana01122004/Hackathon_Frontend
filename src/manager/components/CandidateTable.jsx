@@ -25,12 +25,12 @@ function CandidateTable({
             <th>Applied Role</th>
             <th>Experience</th>
 
-            {showScores && <th>Bot Score</th>}
-            {showScores && <th>Technical</th>}
+            {/* {showScores && <th>Bot Score</th>}
+            {showScores && <th>Technical</th>} */}
 
             <th>Status</th>
 
-            {showAssignRole && <th>Assigned Role</th>}
+            {/* {showAssignRole && <th>Assigned Role</th>} */}
 
             <th>Actions</th>
           </tr>
@@ -55,19 +55,19 @@ function CandidateTable({
                 <td>{candidate.appliedRole}</td>
 
                 <td>{candidate.experience}</td>
-
+{/* 
                 {showScores && (
                   <td>
                     <span className="score">
                       {candidate.botScore ?? "-"}
                     </span>
                   </td>
-                )}
+                )} */}
 
                 {showScores && (
                   <td>
                     <span className="score">
-                      {candidate.technicalScore ?? "-"}
+                      {candidate.interviewSchedule ?? "-"}
                     </span>
                   </td>
                 )}
@@ -82,7 +82,7 @@ function CandidateTable({
                   </span>
                 </td>
 
-                {showAssignRole && (
+                {/* {showAssignRole && (
                   <td>
                     {candidate.assignedRole ? (
                       <span className="assigned-role">
@@ -98,7 +98,7 @@ function CandidateTable({
                       </button>
                     )}
                   </td>
-                )}
+                )} */}
 
                 <td>
                   <div className="action-buttons">
@@ -110,21 +110,13 @@ function CandidateTable({
                       <FaEye />
                     </button>
 
-                    <button
-                      className="resume-btn"
-                      onClick={() => onResume(candidate)}
-                      title="Resume"
-                    >
-                      <FaFilePdf />
-                    </button>
-
-                    <button
+                    {/* <button
                       className="schedule-btn"
                       onClick={() => onSchedule(candidate)}
                       title="Schedule"
                     >
                       <FaCalendarAlt />
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

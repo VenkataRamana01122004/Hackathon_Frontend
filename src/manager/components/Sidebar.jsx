@@ -47,6 +47,11 @@ function Sidebar({ isOpen }) {
     path: "/manager/interviewquestions",
     icon: <FaClipboardList />,
   },
+    {
+    title: "Exam Schedule",
+    path: "/manager/examschedule",
+    icon: <FaClipboardList />,
+  },
   {
     title: "Assessment Reports",
     path: "/manager/assessments",

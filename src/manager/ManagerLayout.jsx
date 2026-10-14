@@ -14,6 +14,7 @@ import CodingQuestions from "./coding/CodingQuestions";
 import MCQQuestions from "./mcq/MCQQuestions";
 import Assessments from "./assessments/Assessments";
 import InterviewQuestions from "./interview/InterviewQuestions";
+import ExamSchedule from "./schedule/ExamSchedule";
 
 import "./ManagerLayout.css";
 
@@ -53,6 +54,7 @@ function ManagerLayout() {
             <Route path="coding" element={<CodingQuestions />} />
             <Route path="mcq" element={<MCQQuestions />} />
             <Route path="interviewquestions" element={<InterviewQuestions />} />
+            <Route path="examschedule" element={<ExamSchedule />} />
             <Route path="assessments" element={<Assessments />} />
             <Route path="*" element={<Navigate to="/manager" replace />} />
           </Routes>
