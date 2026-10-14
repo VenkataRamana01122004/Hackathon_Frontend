@@ -67,7 +67,7 @@ function Sidebar({ isOpen }) {
   return (
     <div className={`sidebar ${isOpen ? "open" : "close"}`}>
       <div className="sidebar-logo">
-        {isOpen ? "Interview Portal" : "IP"}
+        {isOpen ? "ProveX" : "PX"}
       </div>
 
       <ul className="sidebar-menu">

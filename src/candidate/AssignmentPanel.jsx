@@ -119,21 +119,6 @@ function AssignmentPanel() {
     }
   }, []);
 
-  const [metrics, setMetrics] = useState({
-    tabSwitches: tabSwitchCountRef.current,
-    blurEvents: blurCountRef.current,
-    fullscreenExits: fullscreenExitCountRef.current,
-    copyAttempts: 0,
-    cutAttempts: 0,
-    pasteAttempts: 0,
-    rightClicks: 0,
-    mouseClicks: 0,
-    mouseMoves: 0,
-    keyPresses: 0,
-    blockedShortcuts: 0,
-    idleTime: 0
-  });
-
   const currentQuestion = questions[questionIndex];
 
   // Load Questions
@@ -210,22 +195,11 @@ function AssignmentPanel() {
     }
   }, [code, started, questionIndex, language, currentQuestion]);
 
-  const syncMetrics = () => {
-    setMetrics({
-      tabSwitches: tabSwitchCountRef.current,
-      blurEvents: blurCountRef.current,
-      fullscreenExits: fullscreenExitCountRef.current,
-      copyAttempts: copyAttemptsRef.current,
-      cutAttempts: cutAttemptsRef.current,
-      pasteAttempts: pasteAttemptsRef.current,
-      rightClicks: rightClickAttemptsRef.current,
-      mouseClicks: mouseClickCountRef.current,
-      mouseMoves: mouseMoveCountRef.current,
-      keyPresses: keyboardLogsRef.current.length,
-      blockedShortcuts: blockedShortcutAttemptsRef.current,
-      idleTime: idleTimeSecondsRef.current
-    });
-  };
+  // The proctoring counters themselves live in refs (used directly by the
+  // tab-switch/fullscreen-exit limits and the submission payload) and don't
+  // need a React state mirror now that the on-screen metrics panel is gone.
+  // Kept as a no-op so the many call sites below don't need to change.
+  const syncMetrics = () => {};
 
   const startRecording = async () => {
     try {
@@ -992,12 +966,22 @@ const runCode = async () => {
             </div>
           </div>
         )}
-        <div className="app-title">Coding Assignment</div>
-        <div className={`app-timer ${timeLeft < 60 ? "app-timer--low" : ""}`}>
-          <span className="app-timer-label">Time left</span>
-          <span className="app-timer-value">
-            {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-          </span>
+        <div className="app-timer-group">
+          <div className={`app-timer ${timeLeft < 60 ? "app-timer--low" : ""}`}>
+            <span className="app-timer-label">Time left</span>
+            <span className="app-timer-value">
+              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn--submit"
+            style={{ width: "auto" }}
+            onClick={() => submitCode("manual")}
+            disabled={submitting}
+          >
+            {submitting ? "Processing Submit..." : "Submit Examination"}
+          </button>
         </div>
       </header>
 
@@ -1087,20 +1071,11 @@ const runCode = async () => {
             <button
               type="button"
               className="btn btn--secondary"
-              style={{ width: "auto" }}
+              style={{ width: "auto", marginLeft: "auto" }}
               onClick={runCode}
               disabled={runningCode}
             >
               {runningCode ? "Running..." : "Run Code"}
-            </button>
-            <button
-              type="button"
-              className="btn btn--submit"
-              style={{ width: "auto", marginLeft: "auto" }}
-              onClick={() => submitCode("manual")}
-              disabled={submitting}
-            >
-              {submitting ? "Processing Submit..." : "Submit Examination"}
             </button>
           </div>
 
@@ -1119,330 +1094,117 @@ const runCode = async () => {
           <textarea className="terminal-input-textarea" value={input} onChange={(e) => setInput(e.target.value)} /> */}
 
           <div className="problem-section-label">Output Console</div>
-          {/* <pre className="output-console">{output}</pre> */}
-          <div
-  className="output-console"
-  style={{
-    background: "rgba(255, 255, 255, 0.07)",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 255, 255, 0.18)",
-    borderRadius: "12px",
-    padding: "16px",
-    backdropFilter: "blur(14px)",
-    WebkitBackdropFilter: "blur(14px)",
-    boxShadow:
-      "inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 25px rgba(0,0,0,0.18)",
-  }}
->
-  {(() => {
-    try {
-      const result =
-        typeof output === "string"
-          ? JSON.parse(output)
-          : output;
+          <div className="output-console">
+            {(() => {
+              try {
+                const result =
+                  typeof output === "string" ? JSON.parse(output) : output;
 
-      if (!result?.testResults) {
-        return (
-          <pre
-            style={{
-              color: "#ffffff",
-              background: "transparent",
-              margin: 0,
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {output}
-          </pre>
-        );
-      }
+                if (!result?.testResults) {
+                  return <pre className="output-plain">{output}</pre>;
+                }
 
-      const testCases = currentQuestion?.testCases || [];
+                const testCases = currentQuestion?.testCases || [];
 
-      const visibleResults = result.testResults.filter((test) => {
-        const testCase = testCases[test.testCase - 1];
-        return testCase?.hidden === false;
-      });
+                const visibleResults = result.testResults.filter((test) => {
+                  const testCase = testCases[test.testCase - 1];
+                  return testCase?.hidden === false;
+                });
 
-      const hiddenCount = testCases.filter(
-        (testCase) => testCase.hidden === true
-      ).length;
+                const hiddenCount = testCases.filter(
+                  (testCase) => testCase.hidden === true
+                ).length;
 
-      const formatOutput = (value) =>
-        String(value ?? "")
-          .replace(/\\r\\n/g, "\n")
-          .replace(/\\n/g, "\n");
+                const formatOutput = (value) =>
+                  String(value ?? "")
+                    .replace(/\\r\\n/g, "\n")
+                    .replace(/\\n/g, "\n");
 
-      return (
-        <div>
-          {/* Summary */}
-          <div
-            style={{
-              padding: "12px 16px",
-              marginBottom: "14px",
-              borderRadius: "10px",
-
-              background:
-                result.failed === 0
-                  ? "rgba(34, 197, 94, 0.12)"
-                  : "rgba(239, 68, 68, 0.12)",
-
-              border:
-                result.failed === 0
-                  ? "1px solid rgba(74, 222, 128, 0.35)"
-                  : "1px solid rgba(248, 113, 113, 0.35)",
-
-              color: "#ffffff",
-
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-            }}
-          >
-            <strong>
-              {result.failed === 0
-                ? "✓ All Tests Passed"
-                : "✕ Some Tests Failed"}
-            </strong>
-
-            <div
-              style={{
-                marginTop: "5px",
-                fontSize: "13px",
-                color: "rgba(255,255,255,0.7)",
-              }}
-            >
-              {result.passed} / {result.total} test cases passed
-            </div>
-          </div>
-
-          {/* Visible Test Cases */}
-          <div>
-            <div
-              style={{
-                fontWeight: "600",
-                marginBottom: "10px",
-                color: "#ffffff",
-              }}
-            >
-              Visible Test Cases
-            </div>
-
-            {visibleResults.map((test) => (
-              <div
-                key={test.testCase}
-                style={{
-                  marginBottom: "12px",
-                  padding: "14px",
-                  borderRadius: "10px",
-
-                  background: "rgba(255, 255, 255, 0.06)",
-
-                  border: test.passed
-                    ? "1px solid rgba(74, 222, 128, 0.30)"
-                    : "1px solid rgba(248, 113, 113, 0.30)",
-
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-
-                  boxShadow:
-                    "inset 0 1px 0 rgba(255,255,255,0.08)",
-                }}
-              >
-                {/* Header */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <strong style={{ color: "#ffffff" }}>
-                    {test.passed ? "✓" : "✕"} Test Case{" "}
-                    {test.testCase}
-                  </strong>
-
-                  <span
-                    style={{
-                      fontWeight: "600",
-                      fontSize: "12px",
-                      color: test.passed
-                        ? "#86efac"
-                        : "#fca5a5",
-                    }}
-                  >
-                    {test.passed ? "PASSED" : "FAILED"}
-                  </span>
-                </div>
-
-                {/* Input */}
-                <div>
-                  <div
-                    className="result-label"
-                    style={{
-                      color: "rgba(255,255,255,0.6)",
-                      fontSize: "12px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Input
-                  </div>
-
-                  <pre
-                    className="result-code"
-                    style={{
-                      background: "rgba(0, 0, 0, 0.20)",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      borderRadius: "8px",
-                      padding: "10px",
-                      margin: "0 0 10px",
-                      whiteSpace: "pre-wrap",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {formatOutput(test.input)}
-                  </pre>
-                </div>
-
-                {/* Expected */}
-                <div>
-                  <div
-                    className="result-label"
-                    style={{
-                      color: "rgba(255,255,255,0.6)",
-                      fontSize: "12px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Expected Output
-                  </div>
-
-                  <pre
-                    className="result-code"
-                    style={{
-                      background: "rgba(0, 0, 0, 0.20)",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      borderRadius: "8px",
-                      padding: "10px",
-                      margin: "0 0 10px",
-                      whiteSpace: "pre-wrap",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {formatOutput(test.expectedOutput)}
-                  </pre>
-                </div>
-
-                {/* Actual */}
-                <div>
-                  <div
-                    className="result-label"
-                    style={{
-                      color: "rgba(255,255,255,0.6)",
-                      fontSize: "12px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Your Output
-                  </div>
-
-                  <pre
-                    className="result-code"
-                    style={{
-                      background: "rgba(0, 0, 0, 0.20)",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      borderRadius: "8px",
-                      padding: "10px",
-                      margin: "0 0 10px",
-                      whiteSpace: "pre-wrap",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {formatOutput(test.actualOutput)}
-                  </pre>
-                </div>
-
-                {/* Error */}
-                {test.error && (
+                return (
                   <div>
                     <div
-                      className="result-label"
-                      style={{
-                        color: "#fca5a5",
-                        fontSize: "12px",
-                        marginBottom: "5px",
-                      }}
+                      className={`testresult-summary ${
+                        result.failed === 0
+                          ? "testresult-summary--pass"
+                          : "testresult-summary--fail"
+                      }`}
                     >
-                      Error
+                      <strong>
+                        {result.failed === 0
+                          ? "✓ All Tests Passed"
+                          : "✕ Some Tests Failed"}
+                      </strong>
+                      <div className="testresult-summary-meta">
+                        {result.passed} / {result.total} test cases passed
+                      </div>
                     </div>
 
-                    <pre
-                      className="result-error"
-                      style={{
-                        background: "rgba(239, 68, 68, 0.10)",
-                        color: "#fca5a5",
-                        border:
-                          "1px solid rgba(248,113,113,0.25)",
-                        borderRadius: "8px",
-                        padding: "10px",
-                        margin: 0,
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      {test.error}
-                    </pre>
+                    <div>
+                      <div className="testresult-heading">Visible Test Cases</div>
+
+                      {visibleResults.map((test) => (
+                        <div
+                          key={test.testCase}
+                          className={`testcase-card ${
+                            test.passed ? "testcase-card--pass" : "testcase-card--fail"
+                          }`}
+                        >
+                          <div className="testcase-card-header">
+                            <strong className="testcase-title">
+                              {test.passed ? "✓" : "✕"} Test Case {test.testCase}
+                            </strong>
+                            <span
+                              className={`testcase-tag ${
+                                test.passed ? "testcase-tag--pass" : "testcase-tag--fail"
+                              }`}
+                            >
+                              {test.passed ? "PASSED" : "FAILED"}
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="result-label">Input</div>
+                            <pre className="result-code">{formatOutput(test.input)}</pre>
+                          </div>
+
+                          <div>
+                            <div className="result-label">Expected Output</div>
+                            <pre className="result-code">
+                              {formatOutput(test.expectedOutput)}
+                            </pre>
+                          </div>
+
+                          <div>
+                            <div className="result-label">Your Output</div>
+                            <pre className="result-code">
+                              {formatOutput(test.actualOutput)}
+                            </pre>
+                          </div>
+
+                          {test.error && (
+                            <div>
+                              <div className="result-label result-label--error">Error</div>
+                              <pre className="result-error">{test.error}</pre>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {hiddenCount > 0 && (
+                        <div className="testresult-hidden-note">
+                          🔒 {hiddenCount} additional test{" "}
+                          {hiddenCount === 1 ? "case is" : "cases are"} hidden and
+                          used for evaluation.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
-
-            {/* Hidden Test Cases */}
-            {hiddenCount > 0 && (
-              <div
-                style={{
-                  marginTop: "12px",
-                  padding: "11px 14px",
-                  borderRadius: "9px",
-
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border:
-                    "1px solid rgba(255, 255, 255, 0.12)",
-
-                  color: "rgba(255,255,255,0.60)",
-                  fontSize: "13px",
-                  textAlign: "center",
-
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                }}
-              >
-                🔒 {hiddenCount} additional test{" "}
-                {hiddenCount === 1 ? "case is" : "cases are"}{" "}
-                hidden and used for evaluation.
-              </div>
-            )}
+                );
+              } catch (error) {
+                return <pre className="output-plain">{output}</pre>;
+              }
+            })()}
           </div>
-        </div>
-      );
-    } catch (error) {
-      // If output isn't JSON, display it normally
-      return (
-        <pre
-          style={{
-            color: "#ffffff",
-            background: "transparent",
-            margin: 0,
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {output}
-        </pre>
-      );
-    }
-  })()}
-</div>
         </section>
       </main>
 
@@ -1456,16 +1218,6 @@ const runCode = async () => {
         videoRef={videoPreviewRef}
         onVideoRef={attachVideoElement}
       />
-
-      <div className="security-panel coding-security" style={{ margin: "20px 28px 28px" }}>
-        <h5>Proctoring Metrics (Active Diagnostics)</h5>
-        <div className="coding-security-grid">
-          <div className={`security-row ${metrics.tabSwitches > 0 ? "security-row--alert" : ""}`}><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
-          <div className={`security-row ${metrics.blurEvents > 0 ? "security-row--alert" : ""}`}><span>Blur events</span><strong>{metrics.blurEvents}</strong></div>
-          <div className={`security-row ${metrics.fullscreenExits > 0 ? "security-row--alert" : ""}`}><span>Fullscreen exits</span><strong>{metrics.fullscreenExits} / 3</strong></div>
-          <div className={`security-row ${cameraCovered ? "security-row--alert" : ""}`}><span>Camera status</span><strong>{cameraCovered ? "Covered" : "Clear"}</strong></div>
-        </div>
-      </div>
     </div>
   );
 }

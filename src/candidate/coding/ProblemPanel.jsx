@@ -115,36 +115,15 @@ export default function ProblemPanel({ question, index, total }) {
           <div className="problem-section-label">
             Test Cases
           </div>
-          <div
-            className="test-case-buttons"
-            style={{
-              display: "flex",
-              gap: "8px",
-              marginTop: "15px",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="testcase-tabs">
             {visibleTestCases.map((_, testIndex) => (
               <button
                 key={testIndex}
                 type="button"
-                onClick={() =>
-                  setSelectedTestCase(testIndex)
-                }
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  cursor: "pointer",
-                  background:
-                    selectedTestCase === testIndex
-                      ? "#2563eb"
-                      : "#fff",
-                  color:
-                    selectedTestCase === testIndex
-                      ? "#fff"
-                      : "#333",
-                }}
+                onClick={() => setSelectedTestCase(testIndex)}
+                className={`testcase-tab ${
+                  selectedTestCase === testIndex ? "testcase-tab--active" : ""
+                }`}
               >
                 Test Case {testIndex + 1}
               </button>

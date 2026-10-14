@@ -96,6 +96,21 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Chromium forces its own white background + black text onto an
+   autofilled input (e.g. picking a remembered email), ignoring our
+   `background`/`color` rules above — push them back with the
+   inset-box-shadow trick and a long transition delay. */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.08) inset;
+  box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.08) inset;
+  caret-color: var(--accent-light);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .login-error {
   margin-top: 14px;
   background: var(--danger-soft);
@@ -127,6 +142,11 @@
 .candidate-home-shell h2 {
   color: var(--text-primary);
   margin-bottom: 20px;
+  text-align: center;
+}
+
+.candidate-home-shell > p {
+  text-align: center;
 }
 
 .candidate-home-links {
@@ -281,14 +301,20 @@
    ============================================================ */
 
 .home-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 22px;
   margin-top: 24px;
 }
 
+.home-cards .round-card {
+  flex: 1 1 280px;
+  max-width: 320px;
+}
+
 @media (max-width: 900px) {
-  .home-cards { grid-template-columns: 1fr; }
+  .home-cards .round-card { max-width: 100%; }
 }
 
 .round-card {
@@ -368,6 +394,98 @@
 }
 
 /* ============================================================
+   Candidate profile (CandidateProfile.jsx)
+   ============================================================ */
+
+.profile-shell {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 26px 30px;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.profile-name {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.profile-id {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.profile-section {
+  padding: 22px 26px;
+}
+
+.profile-section-title {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-light);
+}
+
+.profile-rounds,
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-round-row,
+.profile-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.profile-round-row:last-child,
+.profile-detail-row:last-child {
+  border-bottom: none;
+}
+
+.profile-detail-row strong {
+  color: var(--text-primary);
+}
+
+.profile-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ============================================================
    Shared exam shell (MCQ + coding)
    ============================================================ */
 
@@ -398,6 +516,13 @@
 .app-title {
   font-size: 1.1rem;
   font-weight: 700;
+}
+
+.app-timer-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
 }
 
 .app-timer {
@@ -487,7 +612,16 @@
 
 @media (min-width: 981px) {
   .app-shell {
-    height: 100vh;
+    /* CandidateNavBar above this element is itself sticky to the page
+       scroll. If app-shell also claimed a full 100vh, the two stacked
+       together would exceed one viewport, forcing the outer page to
+       scroll too — which drags this whole block (and its sticky
+       app-header) up and off-screen before app-shell's own internal
+       scrollbar ever needs to move. Subtracting the navbar's height
+       keeps the outer page from scrolling at all, so all scrolling
+       stays confined to app-shell's own overflow, and the sticky
+       header correctly stays pinned to its top. */
+    height: calc(100vh - 62px);
     min-height: 0;
     overflow-y: auto;
   }
@@ -511,6 +645,12 @@
 }
 
 @media (max-width: 980px) {
+  /* Below this width app-shell isn't its own scroll container (see the
+     981px+ rule above), so the page itself scrolls and app-header shares
+     that scroll context with CandidateNavBar — both stuck at top:0 would
+     overlap instead of stacking, so push the header down by the navbar's
+     height. */
+  .app-header { top: 62px; }
   .app-main { flex-direction: column; }
   .coding-main { display: flex; }
   .coding-main .problem-panel,
@@ -594,7 +734,8 @@
 
 .option-card:hover { border-color: var(--accent-light); background: rgba(255, 255, 255, 0.1); }
 
-.option-card input[type="radio"] {
+.option-card input[type="radio"],
+.option-card input[type="checkbox"] {
   accent-color: var(--success);
   width: 17px;
   height: 17px;
@@ -815,6 +956,62 @@
   color: var(--text-secondary);
 }
 
+.test-cases-section {
+  margin-top: 10px;
+}
+
+.testcase-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.testcase-tab {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border-strong);
+  cursor: pointer;
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.testcase-tab:hover { background: var(--glass-bg-hover); }
+
+.testcase-tab--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.test-case {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.test-case h4 {
+  margin: 0 0 10px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.test-case-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-light);
+  margin: 12px 0 6px;
+}
+
+.test-case-label:first-of-type { margin-top: 0; }
+
 .editor-panel {
   flex: 1.3;
   min-width: 0;
@@ -891,18 +1088,121 @@
 
 .output-console {
   background: var(--glass-dark-bg-strong);
-  color: #e2f8e6;
-  padding: 12px;
-  border-radius: 8px;
-  min-height: 120px;
-  max-height: 220px;
+  color: var(--text-primary);
+  padding: 16px;
+  border-radius: 12px;
+  flex: 1 1 auto;
+  min-height: 320px;
+  max-height: 560px;
   overflow-y: auto;
   margin: 0;
-  font-family: var(--font-mono);
-  white-space: pre-wrap;
   border: 1px solid var(--glass-dark-border);
-  backdrop-filter: blur(var(--blur-sm));
-  -webkit-backdrop-filter: blur(var(--blur-sm));
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  box-shadow: var(--shadow-inset);
+}
+
+.output-plain {
+  color: var(--text-primary);
+  background: transparent;
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.testresult-summary {
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  color: var(--text-primary);
+}
+
+.testresult-summary--pass { background: var(--success-soft); border: 1px solid rgba(74, 222, 128, 0.35); }
+.testresult-summary--fail { background: var(--danger-soft); border: 1px solid rgba(248, 113, 113, 0.35); }
+
+.testresult-summary-meta {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.testresult-heading {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.testcase-card {
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--glass-bg);
+  box-shadow: var(--shadow-inset);
+}
+
+.testcase-card--pass { border: 1px solid rgba(74, 222, 128, 0.3); }
+.testcase-card--fail { border: 1px solid rgba(248, 113, 113, 0.3); }
+
+.testcase-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.testcase-title { color: var(--text-primary); }
+
+.testcase-tag {
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+.testcase-tag--pass { color: #86efac; }
+.testcase-tag--fail { color: #fca5a5; }
+
+.result-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-bottom: 5px;
+}
+
+.result-label--error { color: #fca5a5; }
+
+.result-code {
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-dark-border);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.result-error {
+  background: var(--danger-soft);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.testresult-hidden-note {
+  margin-top: 12px;
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
 }
 
 /* ---- Draggable / minimizable camera window (coding) ---- */

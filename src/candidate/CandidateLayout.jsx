@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import CandidateNavBar from "./CandidateNavBar";
 import CandidateHome from './CandidateHome';
+import CandidateProfile from './CandidateProfile';
 import AssignmentPanel from './AssignmentPanel';
 import BitsAssessment from "./BitsAssessment";
 // import SubmissionForm from "./SubmissionForm";
@@ -17,7 +18,7 @@ const CandidateLayout = ({ logout }) => {
 
     <Routes>
       <Route path="/" element={<CandidateHome />} />
-      <Route path="profile" element={<h2>Profile</h2>} />
+      <Route path="profile" element={<CandidateProfile />} />
       <Route path="assignment" element={<AssignmentPanel/>}/>
       <Route path="bitsassessment" element={<BitsAssessment/>}/>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import QuestionPanel from "./mcq/QuestionPanel.jsx";
 import QuestionGrid from "./mcq/QuestionGrid.jsx";
 import CamWindow from "./mcq/CamWindow.jsx";
@@ -20,7 +20,6 @@ const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
 export default function BitsAssessment() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Safe User Parsing Helper
   const getUser = () => {
@@ -38,7 +37,7 @@ export default function BitsAssessment() {
   // --- STATE ---
   const [loading, setLoading] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
-  const [examFinished, setExamFinished] = useState(() => location.search === "?view=result");
+  const [examFinished, setExamFinished] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -53,14 +52,6 @@ export default function BitsAssessment() {
   const [isBlurred, setIsBlurred] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [securityWarning, setSecurityWarning] = useState("");
-  const [submissionResult, setSubmissionResult] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("mcq_result") || "null");
-    } catch {
-      return null;
-    }
-  });
-  const [submittedQuestionTotal, setSubmittedQuestionTotal] = useState(0);
   const [cameraViolations, setCameraViolations] = useState(0);
   const [cameraWarningSeconds, setCameraWarningSeconds] = useState(0);
   const [resumeCount, setResumeCount] = useState(() => parseInt(localStorage.getItem("resume_count") || "0", 10));
@@ -119,6 +110,22 @@ export default function BitsAssessment() {
   useEffect(() => { tabSwitchesRef.current = tabSwitches; }, [tabSwitches]);
   useEffect(() => { isBlurredRef.current = isBlurred; }, [isBlurred]);
   useEffect(() => { isOfflineRef.current = isOffline; }, [isOffline]);
+
+  // The question currently on screen counts as "visited" the moment it's
+  // shown — not just when the candidate clicks Next or jumps via the grid.
+  // This also makes question 1 start out visited instead of unvisited.
+  useEffect(() => {
+    const currentQ = questions[currentIndex];
+    if (!currentQ || statuses[currentQ.id]) return;
+
+    setStatuses((prev) => {
+      if (prev[currentQ.id]) return prev;
+      const updated = { ...prev, [currentQ.id]: "visited" };
+      statusesRef.current = updated;
+      localStorage.setItem("exam_statuses", JSON.stringify(updated));
+      return updated;
+    });
+  }, [currentIndex, questions, statuses]);
 
   // --- ROUTE PROTECTION ---
   // useEffect(() => {
@@ -656,11 +663,6 @@ const handleSelectOption = (option) => {
 
   const navigatePrev = () => { if (currentIndex > 0) setCurrentIndex(prev => prev - 1); };
   const navigateNext = () => {
-    const currentQ = questions[currentIndex];
-    if (!currentQ) return;
-    if (!statuses[currentQ.id]) {
-      setStatuses(prev => ({ ...prev, [currentQ.id]: 'visited' }));
-    }
     if (currentIndex < questions.length - 1) setCurrentIndex(prev => prev + 1);
   };
 
@@ -854,43 +856,6 @@ logEvent("Brand new operational exam profile generated.");
     if (submittingRef.current) return;
 
     submittingRef.current = true;
-    const submittedTotal = questionsRef.current.length || questions.length;
-    setSubmittedQuestionTotal(submittedTotal);
-    const score = questionsRef.current.reduce(
-      (result, question) => {
-        const expected = Array.isArray(question.correctAnswers)
-          ? question.correctAnswers
-          : question.correctAnswer !== undefined
-            ? [question.correctAnswer]
-            : [];
-        const actualValue = answersRef.current[question.id];
-        const actual = Array.isArray(actualValue)
-          ? actualValue
-          : actualValue === undefined
-            ? []
-            : [actualValue];
-        const correct = expected.length === actual.length &&
-          expected.every((value) => actual.includes(value));
-
-        return {
-          total: result.total + 1,
-          correct: result.correct + (correct ? 1 : 0),
-        };
-      },
-      { total: 0, correct: 0 }
-    );
-    setSubmissionResult({
-      ...score,
-      total: submittedTotal,
-      percentage: submittedTotal ? Math.round((score.correct / submittedTotal) * 100) : 0,
-      reason,
-    });
-    localStorage.setItem("mcq_result", JSON.stringify({
-      ...score,
-      total: submittedTotal,
-      percentage: submittedTotal ? Math.round((score.correct / submittedTotal) * 100) : 0,
-      reason,
-    }));
     setExamFinished(true);
     await window.electronAPI?.stopExam?.();
 
@@ -930,6 +895,7 @@ logEvent("Brand new operational exam profile generated.");
     user.bitsExamStatus = "Process";
     localStorage.setItem("user", JSON.stringify(user));
 
+    navigate("/candidate", { replace: true });
   };
 
   useEffect(() => {
@@ -973,31 +939,13 @@ logEvent("Brand new operational exam profile generated.");
   }, [cameraCovered, examStarted, examFinished]);
 
   if (examFinished) {
-    const totalQs = submittedQuestionTotal || questions.length;
-    const answeredQs = Object.keys(answers).length;
+    // No results screen — submission finishes and autoSubmitExam() takes
+    // the candidate straight back to the candidate home page. This is a
+    // brief placeholder for the moment in between.
     return (
-      <div className="glass-panel glass-panel--elevated" style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '600px', margin: '40px auto', color: 'var(--text-primary)' }}>
-        <h2 style={{ color: '#4ade80', marginBottom: '20px' }}>✓ Exam Submitted Successfully</h2>
-        <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '20px', marginBottom: '20px' }}>
-          <p>Candidate: <strong>{CANDIDATE_NAME}</strong></p>
-          <p>Username: <code>{CANDIDATE_USERNAME}</code></p>
-        </div>
-        <h4 style={{ color: 'var(--text-primary)' }}>Your Score</h4>
-        <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--accent-light)' }}>
-          {submissionResult?.correct ?? 0} / {submissionResult?.total ?? totalQs}
-        </div>
-        <p style={{ color: '#4ade80' }}>{submissionResult?.percentage ?? 0}%</p>
-        <p style={{ color: '#fca5a5' }}>Submission reason: {submissionResult?.reason}</p>
-        <h4 style={{ color: 'var(--text-primary)' }}>Submission Summary</h4>
-        <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-around', padding: '15px', margin: '20px 0' }}>
-          <div><strong>{totalQs}</strong><br/><small style={{color:'var(--text-muted)'}}>Total Tasks</small></div>
-          <div><strong>{answeredQs}</strong><br/><small style={{color:'var(--text-muted)'}}>Answered</small></div>
-          <div><strong>{totalQs - answeredQs}</strong><br/><small style={{color:'var(--text-muted)'}}>Skipped</small></div>
-        </div>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Your biometric data, response profile, and security logs are fully synchronized.</p>
-        <button className="btn btn--submit" onClick={() => navigate("/candidate")}>
-          Continue to Candidate Home
-        </button>
+      <div className="glass-panel glass-panel--elevated" style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '500px', margin: '40px auto', color: 'var(--text-primary)' }}>
+        <h2 style={{ marginBottom: '10px' }}>Submitting your assessment…</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Please wait, you'll be redirected shortly.</p>
       </div>
     );
   }

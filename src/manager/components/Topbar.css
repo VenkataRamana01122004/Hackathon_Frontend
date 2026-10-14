@@ -63,28 +63,6 @@
     position: relative;
 }
 
-.notification {
-    position: relative;
-    font-size: 22px;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.notification-count {
-    position: absolute;
-    top: -8px;
-    right: -10px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--danger);
-    color: white;
-    font-size: 11px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 .profile-section {
     display: flex;
     align-items: center;
@@ -117,9 +95,9 @@
     top: 65px;
     right: 0;
     width: 250px;
-    background: var(--glass-bg-elevated);
-    backdrop-filter: blur(var(--blur-lg));
-    -webkit-backdrop-filter: blur(var(--blur-lg));
+    background: var(--glass-dark-bg-strong);
+    backdrop-filter: blur(var(--blur-sm));
+    -webkit-backdrop-filter: blur(var(--blur-sm));
     border: 1px solid var(--glass-border-strong);
     border-radius: 12px;
     overflow: hidden;
@@ -138,7 +116,7 @@
 }
 
 .dropdown-header p {
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .dropdown-avatar {
@@ -164,7 +142,7 @@
 }
 
 .profile-dropdown button:hover {
-    background: var(--glass-bg);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .logout-btn {

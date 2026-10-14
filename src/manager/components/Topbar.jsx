@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   FaBars,
-  FaBell,
   FaUserCircle,
   FaSignOutAlt,
   FaUser
@@ -40,15 +39,6 @@ function Topbar({ isOpen, setIsOpen }) {
 
 
       <div className="topbar-right">
-
-        <div className="notification">
-          <FaBell />
-
-          <span className="notification-count">
-            3
-          </span>
-        </div>
-
 
         <div
           className="profile-section"

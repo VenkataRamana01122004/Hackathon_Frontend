@@ -8,7 +8,6 @@ import "./MCQQuestions.css";
 import AddMCQModal from "./AddMCQModal";
 import ViewMCQModal from "./ViewMCQModal";
 import EditMCQModal from "./EditMCQModal";
-import GenerateAIMCQModal from './GenerateAIMCQModal'
 
 function MCQQuestions() {
 
@@ -21,7 +20,6 @@ function MCQQuestions() {
   const [showAdd, setShowAdd] = useState(false);
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [showGenerate, setShowGenerate] = useState(false);
 
   const [selectedQuestion, setSelectedQuestion] = useState(null);
 
@@ -116,14 +114,6 @@ function MCQQuestions() {
           <h1>MCQ Questions</h1>
           <p>Manage multiple-choice questions and answer sets</p>
         </div>
-
-        <button
-          className="primary-btn"
-          onClick={() => setShowGenerate(true)}
-        >
-          <FaPlus />
-          Generate MCQ
-        </button>
 
         <button
           className="primary-btn"
@@ -266,17 +256,6 @@ function MCQQuestions() {
           close={()=>setShowAdd(false)}
 
           refresh={loadQuestions}
-
-        />
-
-      }
-
-      {showGenerate &&
-
-        <GenerateAIMCQModal
-
-          close={()=>setShowGenerate(false)}
-
 
         />
 

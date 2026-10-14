@@ -6,7 +6,7 @@ function MainNavBar() {
 
         <nav>
 
-            <h2>Interview Portal</h2>
+            <h2>ProveX</h2>
 
             <Link to="/">Home</Link>
 
