@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import GlassSelect from "../components/GlassSelect";
 
 function GenerateAIMCQModal({ close, refresh }) {
   const [form, setForm] = useState({
@@ -100,7 +101,7 @@ function GenerateAIMCQModal({ close, refresh }) {
           />
 
           <label>Question Type</label>
-          <select
+          <GlassSelect
             name="questionType"
             value={form.questionType}
             onChange={handleChange}
@@ -114,7 +115,7 @@ function GenerateAIMCQModal({ close, refresh }) {
             <option value="BOTH">
               Both
             </option>
-          </select>
+          </GlassSelect>
 
           <label>Number of Questions</label>
           <input

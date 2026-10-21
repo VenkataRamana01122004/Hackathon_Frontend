@@ -11,6 +11,7 @@ import {
 
 import "../components/manager-pages.css";
 import "./InterviewQuestions.css";
+import GlassSelect from "../components/GlassSelect";
 
 const API = "http://localhost:5000/api/manager";
 
@@ -243,7 +244,7 @@ function InterviewQuestions() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <select
+        <GlassSelect
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value)}
         >
@@ -251,7 +252,7 @@ function InterviewQuestions() {
           <option value="Easy">Easy</option>
           <option value="Medium">Medium</option>
           <option value="Hard">Hard</option>
-        </select>
+        </GlassSelect>
 
         <input
           type="text"
@@ -260,7 +261,7 @@ function InterviewQuestions() {
           onChange={(e) => setCategory(e.target.value)}
         />
 
-        <select
+        <GlassSelect
           value={questionType}
           onChange={(e) => setQuestionType(e.target.value)}
         >
@@ -268,7 +269,7 @@ function InterviewQuestions() {
           <option value="Technical">Technical</option>
           <option value="HR">HR</option>
           <option value="Behavioral">Behavioral</option>
-        </select>
+        </GlassSelect>
 
         <button
           className="interview-secondary-btn"
@@ -433,7 +434,7 @@ function InterviewQuestions() {
 
                 <div>
                   <label>Difficulty</label>
-                  <select
+                  <GlassSelect
                     name="difficulty"
                     value={form.difficulty}
                     onChange={handleFormChange}
@@ -441,12 +442,12 @@ function InterviewQuestions() {
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
-                  </select>
+                  </GlassSelect>
                 </div>
 
                 <div>
                   <label>Question Type</label>
-                  <select
+                  <GlassSelect
                     name="questionType"
                     value={form.questionType}
                     onChange={handleFormChange}
@@ -454,7 +455,7 @@ function InterviewQuestions() {
                     <option value="Technical">Technical</option>
                     <option value="HR">HR</option>
                     <option value="Behavioral">Behavioral</option>
-                  </select>
+                  </GlassSelect>
                 </div>
 
                 <div>
@@ -542,7 +543,7 @@ function InterviewQuestions() {
               />
 
               <label>Difficulty *</label>
-              <select
+              <GlassSelect
                 name="category"
                 value={generation.category}
                 onChange={handleGenerationChange}
@@ -550,7 +551,7 @@ function InterviewQuestions() {
                 <option value="Easy">Easy</option>
                 <option value="Medium">Medium</option>
                 <option value="Hard">Hard</option>
-              </select>
+              </GlassSelect>
 
               <label>Number of Questions *</label>
               <input

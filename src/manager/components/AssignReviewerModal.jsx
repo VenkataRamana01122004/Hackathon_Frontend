@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 
 import "./AssignReviewerModal.css";
+import GlassSelect from "./GlassSelect";
 
 function AssignReviewerModal({
   candidate,
@@ -125,7 +126,7 @@ function AssignReviewerModal({
 
                       </label>
 
-                      <select
+                      <GlassSelect
 
                           value={reviewer}
 
@@ -152,7 +153,7 @@ function AssignReviewerModal({
 
                           }
 
-                      </select>
+                      </GlassSelect>
 
                   </div>
 
@@ -186,7 +187,7 @@ function AssignReviewerModal({
 
                       </label>
 
-                      <select
+                      <GlassSelect
 
                           value={priority}
 
@@ -200,7 +201,7 @@ function AssignReviewerModal({
 
                           <option>Low</option>
 
-                      </select>
+                      </GlassSelect>
 
                   </div>
 

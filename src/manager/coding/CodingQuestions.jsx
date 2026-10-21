@@ -9,6 +9,7 @@ import "./CodingQuestions.css";
 
 import AddQuestionModal from "./AddQuestionModal";
 import ViewQuestionModal from "./ViewQuestionModal";
+import GlassSelect from "../components/GlassSelect";
 
 function CodingQuestions() {
 
@@ -142,7 +143,7 @@ function CodingQuestions() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <select
+        <GlassSelect
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value)}
         >
@@ -155,7 +156,7 @@ function CodingQuestions() {
 
           <option>Hard</option>
 
-        </select>
+        </GlassSelect>
 
         <input
           placeholder="Category"

@@ -1,4 +1,5 @@
 import "./FilterBar.css";
+import GlassSelect from "./GlassSelect";
 
 function FilterBar({
   role,
@@ -11,7 +12,7 @@ function FilterBar({
   return (
     <div className="filter-bar">
 
-      <select
+      <GlassSelect
         value={role}
         onChange={(e) => setRole(e.target.value)}
       >
@@ -22,9 +23,9 @@ function FilterBar({
         <option>AI Engineer</option>
         <option>ML Engineer</option>
         <option>Cloud Engineer</option>
-      </select>
+      </GlassSelect>
 
-      <select
+      <GlassSelect
         value={experience}
         onChange={(e) => setExperience(e.target.value)}
       >
@@ -33,9 +34,9 @@ function FilterBar({
         <option value="3-5">3-5 Years</option>
         <option value="6-10">6-10 Years</option>
         <option value="11-100">11+ Years</option>
-      </select>
+      </GlassSelect>
 
-      <select
+      <GlassSelect
         value={status}
         onChange={(e) => setStatus(e.target.value)}
       >
@@ -44,7 +45,7 @@ function FilterBar({
         <option>Interview Scheduled</option>
         <option>Qualified</option>
         <option>Rejected</option>
-      </select>
+      </GlassSelect>
 
     </div>
   );

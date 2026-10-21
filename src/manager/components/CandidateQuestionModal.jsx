@@ -297,6 +297,7 @@ import {
 } from "react-icons/fa";
 
 import "./CandidateTable.css";
+import GlassSelect from "./GlassSelect";
 
 function CandidateQuestionModal({ candidate, onClose, onSave }) {
 
@@ -821,7 +822,7 @@ const saveAssignment = async () => {
             />
           </div>
 
-          <select
+          <GlassSelect
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
             style={{
@@ -837,7 +838,7 @@ const saveAssignment = async () => {
             <option value="Easy">Easy</option>
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
-          </select>
+          </GlassSelect>
         </div>
 
         {/* Questions list */}

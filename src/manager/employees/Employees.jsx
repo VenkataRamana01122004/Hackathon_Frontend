@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
 import "./Employees.css";
+import GlassSelect from "../components/GlassSelect";
 
 function Employees() {
   const [employees, setEmployees] = useState([]);
@@ -62,7 +63,7 @@ function Employees() {
         </div>
 
         <div className="filter-group">
-          <select
+          <GlassSelect
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
           >
@@ -75,16 +76,16 @@ function Employees() {
                   {designation}
                 </option>
               ))}
-          </select>
+          </GlassSelect>
 
-          <select
+          <GlassSelect
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
             <option value="">Status</option>
             <option value="Available">Available</option>
             <option value="Busy">Busy</option>
-          </select>
+          </GlassSelect>
         </div>
       </div>
 

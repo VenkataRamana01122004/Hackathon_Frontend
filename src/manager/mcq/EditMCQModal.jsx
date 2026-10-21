@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import GlassSelect from "../components/GlassSelect";
 
 function EditMCQModal({question,close, refresh }) {
 
@@ -98,7 +99,7 @@ const [isActive, setIsActive] = useState(question?.isActive ?? true);
           <div className="grid-2">
             <div>
               <label>Question Type</label>
-              <select
+              <GlassSelect
                 value={questionType}
                 onChange={(e) => {
                   setQuestionType(e.target.value);
@@ -107,7 +108,7 @@ const [isActive, setIsActive] = useState(question?.isActive ?? true);
               >
                 <option value="SINGLE">Single Choice</option>
                 <option value="MULTIPLE">Multiple Choice</option>
-              </select>
+              </GlassSelect>
             </div>
 
             <div>
@@ -122,14 +123,14 @@ const [isActive, setIsActive] = useState(question?.isActive ?? true);
           <div className="grid-2">
             <div>
               <label>Difficulty</label>
-              <select
+              <GlassSelect
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
               >
                 <option>Easy</option>
                 <option>Medium</option>
                 <option>Hard</option>
-              </select>
+              </GlassSelect>
             </div>
 
             <div>

@@ -8,6 +8,7 @@ import "./MCQQuestions.css";
 import AddMCQModal from "./AddMCQModal";
 import ViewMCQModal from "./ViewMCQModal";
 import EditMCQModal from "./EditMCQModal";
+import GlassSelect from "../components/GlassSelect";
 
 function MCQQuestions() {
 
@@ -133,7 +134,7 @@ function MCQQuestions() {
           onChange={(e)=>setSearch(e.target.value)}
         />
 
-        <select
+        <GlassSelect
           value={difficulty}
           onChange={(e)=>setDifficulty(e.target.value)}
         >
@@ -143,7 +144,7 @@ function MCQQuestions() {
           <option>Medium</option>
           <option>Hard</option>
 
-        </select>
+        </GlassSelect>
 
         <input
           placeholder="Category"

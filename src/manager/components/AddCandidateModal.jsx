@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import "./AddCandidateModal.css";
+import GlassSelect from "./GlassSelect";
 
 function AddCandidateModal({ isOpen, onClose }) {
   const [candidate, setCandidate] = useState({
@@ -158,7 +159,7 @@ function AddCandidateModal({ isOpen, onClose }) {
 
             <div className="form-group">
               <label>Gender</label>
-              <select
+              <GlassSelect
                 name="gender"
                 value={candidate.gender}
                 onChange={handleChange}
@@ -167,7 +168,7 @@ function AddCandidateModal({ isOpen, onClose }) {
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
-              </select>
+              </GlassSelect>
             </div>
 
             <div className="form-group">
@@ -214,7 +215,7 @@ function AddCandidateModal({ isOpen, onClose }) {
 
             <div className="form-group">
               <label>Status</label>
-              <select
+              <GlassSelect
                 name="status"
                 value={candidate.status}
                 onChange={handleChange}
@@ -228,7 +229,7 @@ function AddCandidateModal({ isOpen, onClose }) {
                 <option value="Completed">Completed</option>
                 <option value="Selected">Selected</option>
                 <option value="Rejected">Rejected</option>
-              </select>
+              </GlassSelect>
             </div>
           </div>
 

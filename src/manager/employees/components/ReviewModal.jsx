@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaTimes, FaStar } from "react-icons/fa";
 import "./ReviewModal.css";
+import GlassSelect from "../../components/GlassSelect";
 
 function ReviewModal({ candidate, onClose }) {
 
@@ -180,7 +181,7 @@ function ReviewModal({ candidate, onClose }) {
 
             <label>Recommendation</label>
 
-            <select
+            <GlassSelect
               value={recommendation}
               onChange={(e)=>setRecommendation(e.target.value)}
             >
@@ -191,7 +192,7 @@ function ReviewModal({ candidate, onClose }) {
 
               <option>Reject</option>
 
-            </select>
+            </GlassSelect>
 
           </div>
 

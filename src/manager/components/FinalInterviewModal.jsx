@@ -261,6 +261,7 @@ import {
 } from "react-icons/fa";
 
 import "./FinalInterviewModal.css";
+import GlassSelect from "./GlassSelect";
 
 function FinalInterviewModal({ candidate, onClose, onSchedule }) {
   if (!candidate) return null;
@@ -337,7 +338,7 @@ function FinalInterviewModal({ candidate, onClose, onSchedule }) {
               <FaUsers />
               Assigned Employee
             </label>
-            <select
+            <GlassSelect
               value={assignedEmployeeId}
               onChange={(e) => setAssignedEmployeeId(e.target.value)}
             >
@@ -347,7 +348,7 @@ function FinalInterviewModal({ candidate, onClose, onSchedule }) {
                   {emp.fullName} ({emp.employeeId || emp.id})
                 </option>
               ))}
-            </select>
+            </GlassSelect>
           </div>
 
           <div className="two-column">

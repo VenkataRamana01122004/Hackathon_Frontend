@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import GlassSelect from "../components/GlassSelect";
 
 function AddQuestionModal({ close, refresh }) {
   const [form, setForm] = useState({
@@ -119,7 +120,7 @@ const [solutionLanguage, setSolutionLanguage] = useState("cpp");
 
               <label>Difficulty</label>
 
-              <select
+              <GlassSelect
                 name="difficulty"
                 value={form.difficulty}
                 onChange={handleChange}
@@ -131,7 +132,7 @@ const [solutionLanguage, setSolutionLanguage] = useState("cpp");
 
                 <option>Hard</option>
 
-              </select>
+              </GlassSelect>
 
             </div>
 

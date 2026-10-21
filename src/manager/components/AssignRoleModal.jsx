@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaTimes, FaUserTie, FaBriefcase, FaCheckCircle } from "react-icons/fa";
 import "./AssignRoleModal.css";
+import GlassSelect from "./GlassSelect";
 
 function AssignRoleModal({ candidate, onClose, onSave }) {
 
@@ -112,7 +113,7 @@ function AssignRoleModal({ candidate, onClose, onSave }) {
 
           <label>Assign Suitable Role</label>
 
-          <select
+          <GlassSelect
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
           >
@@ -124,7 +125,7 @@ function AssignRoleModal({ candidate, onClose, onSave }) {
               </option>
             ))}
 
-          </select>
+          </GlassSelect>
 
         </div>
 
