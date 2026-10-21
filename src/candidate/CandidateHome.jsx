@@ -91,8 +91,11 @@ const examTimeReached = isExamTimeReached(
 // Round permissions
 const canStartMcq = !mcqCompleted && examTimeReached;
 
-const canStartCoding =
-  mcqCompleted && !codingCompleted && examTimeReached;
+const canStartCoding = mcqCompleted && !codingCompleted ;
+
+// const canStartMcq = !mcqCompleted ;
+
+// const canStartCoding = mcqCompleted && !codingCompleted ;
 
 const canStartInterview =
   mcqCompleted &&
@@ -106,14 +109,14 @@ const canStartInterview =
 
 
 
-  console.log("Candidate Status", {
-    bitsStatus,
-    codingStatus,
-    interviewStatus,
-    canStartMcq,
-    canStartCoding,
-    canStartInterview
-  });
+  // console.log("Candidate Status", {
+  //   bitsStatus,
+  //   codingStatus,
+  //   interviewStatus,
+  //   canStartMcq,
+  //   canStartCoding,
+  //   canStartInterview
+  // });
 
 
 

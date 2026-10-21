@@ -101,22 +101,32 @@ const validateCandidates = async (userId) => {
                 <thead>
                     <tr>
                         <th>Candidate</th>
-                        {/* <th>Date</th> */}
+                        <th>Status</th>
                         <th>Coding</th>
                         <th>MCQ</th>
-                        <th>Result</th>
-                        <th>Validate</th>
+                        <th>Result/Validate</th>
+                        {/* <th>Validate</th> */}
                     </tr>
 
                 </thead>
 
                 <tbody>
 
-                    {candidates.map((candidate)=>(
+                    {/* {candidates.map((candidate)=>( */}
+                    {candidates
+                        .filter(
+                            (candidate) =>
+                            !(
+                                candidate.bitsExamStatus === "Pending" &&
+                                candidate.codingExamStatus === "Pending"
+                            )
+                        )
+                        .map((candidate) => (
 
                         <tr key={candidate.id}>
 
                             <td>{candidate.fullName}</td>
+                            <td>{candidate.status}</td>
 
                             {/* <td>{candidate.date}</td> */}
 
@@ -164,7 +174,7 @@ const validateCandidates = async (userId) => {
 
                             </td>
 
-                            <td>
+                            {/* <td>
 
                                 <button
 
@@ -184,19 +194,61 @@ const validateCandidates = async (userId) => {
 
                                 </button>
 
-                            </td>
+                            </td> */}
+
+<td>
+  {candidate.bitsExamStatus === "Process" &&
+   candidate.codingExamStatus === "Process" ? (
+    <button
+      className="view-btn"
+      disabled={validatingId !== null}
+      onClick={async () => {
+        if (validatingId !== null) return;
+
+        setValidatingId(candidate.id);
+
+        try {
+          await validateCandidates(candidate.id);
+        } finally {
+          setValidatingId(null);
+        }
+      }}
+      style={{
+        backgroundColor:
+          validatingId === candidate.id ? "#64748b" : "#2563eb",
+        color: "#ffffff",
+        border: "none",
+        borderRadius: "6px",
+        padding: "9px 16px",
+        fontWeight: "600",
+        cursor: validatingId !== null ? "not-allowed" : "pointer",
+      }}
+    >
+      {validatingId === candidate.id ? "Validating..." : "Validate"}
+    </button>
+  ) : (
+    <button
+      className="view-btn"
+      onClick={() => {
+        setSelectedUser(candidate.id);
+        setResultOpen(true);
+      }}
+      style={{
+        backgroundColor: "#16a34a",
+        color: "#ffffff",
+        border: "none",
+        borderRadius: "6px",
+        padding: "9px 16px",
+        fontWeight: "600",
+        cursor: "pointer",
+      }}
+    >
+      View Result
+    </button>
+  )}
+</td>
 
                             {/* <td>
-                                <button
-                                    className="view-btn"
-                                    onClick={()=>{
-                                         validateCandidates(candidate.id);
-                                    }}
-                                >
-                                    Validate
-                                </button>
-                            </td> */}
-                            <td>
                             <button
                                 className="view-btn"
                                 disabled={validatingId !== null}
@@ -255,7 +307,7 @@ const validateCandidates = async (userId) => {
                                 }
                                 `}
                             </style>
-                            </td>
+                            </td> */}
 
 
                         </tr>

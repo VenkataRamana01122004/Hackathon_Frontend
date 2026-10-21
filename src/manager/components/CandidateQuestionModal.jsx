@@ -822,23 +822,29 @@ const saveAssignment = async () => {
             />
           </div>
 
-          <GlassSelect
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            style={{
-              padding: "10px 12px",
-              border: "1px solid var(--glass-border)",
-              borderRadius: "8px",
-              background: "var(--glass-bg)",
-              color: "var(--text-primary)",
-              maxWidth: "150px",
-            }}
-          >
-            <option value="">All Difficulty</option>
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-          </GlassSelect>
+          
+<select
+  value={difficulty}
+  onChange={(e) => setDifficulty(e.target.value)}
+  style={{
+    width: "160px",
+    minWidth: "160px",
+    padding: "12px",
+    border: "1px solid var(--glass-border)",
+    borderRadius: "8px",
+    background: "#1e293b",
+    color: "#ffffff",
+    outline: "none",
+    cursor: "pointer",
+    flexShrink: 0,
+  }}
+>
+  <option value="">All Difficulty</option>
+  <option value="Easy">Easy</option>
+  <option value="Medium">Medium</option>
+  <option value="Hard">Hard</option>
+</select>
+
         </div>
 
         {/* Questions list */}
