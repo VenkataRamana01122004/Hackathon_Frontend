@@ -34,9 +34,18 @@ const fetchCandidates = async () => {
       "http://localhost:5000/api/manager/viewcandidate"
     );
 
-    setCandidates(response.data);
+    const data = response.data;
+
+    if (Array.isArray(data)) {
+      setCandidates(data);
+    } else if (Array.isArray(data.candidates)) {
+      setCandidates(data.candidates);
+    } else {
+      setCandidates([]);
+    }
   } catch (error) {
     console.error("Error fetching candidates:", error);
+    setCandidates([]);
   }
 };
 

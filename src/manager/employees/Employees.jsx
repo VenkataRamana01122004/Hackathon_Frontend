@@ -15,17 +15,26 @@ function Employees() {
     fetchEmployees();
   }, []);
 
-  const fetchEmployees = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:5000/api/manager/viewemployee"
-      );
+ const fetchEmployees = async () => {
+  try {
+    const response = await axios.get(
+      "http://localhost:5000/api/manager/viewemployee"
+    );
 
-      setEmployees(response.data);
-    } catch (error) {
-      console.error("Error fetching employees:", error);
+    const data = response.data;
+
+    if (Array.isArray(data)) {
+      setEmployees(data);
+    } else if (Array.isArray(data.employees)) {
+      setEmployees(data.employees);
+    } else {
+      setEmployees([]);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    setEmployees([]);
+  }
+};
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch =

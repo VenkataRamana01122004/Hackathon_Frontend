@@ -108,11 +108,29 @@ function AddMCQModal({ close, refresh }) {
 
             <div>
               <label>Category</label>
+              <GlassSelect
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  // setCorrectAnswers([]);
+                }}
+              >
+                <option value="Java">Java</option>
+                <option value=".NET">C#</option>
+                <option value="C++">Cpp</option>
+                <option value="SQL">SQL</option>
+                <option value="AI">AI</option>
+              </GlassSelect>
+            </div>
+
+            {/* <div>
+              <label>Category</label>
               <input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               />
-            </div>
+            </div> */}
+
           </div>
 
           <div className="grid-2">

@@ -101,7 +101,7 @@ setIsRandomSchedule(false);
       onChange={(e) => setIsRandomSchedule(e.target.checked)}
       disabled={loading}
     />
-    Enable Random Schedule
+    Schedule Questions
   </label>
 </div>
         </div>

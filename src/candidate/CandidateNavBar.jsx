@@ -67,7 +67,7 @@ function CandidateNavBar({ logout }) {
 
             {" | "}
 
-            <Link to="/candidate/profile">profile</Link>
+            <Link to="/candidate/profile">Profile</Link>
 
             {" | "}
 

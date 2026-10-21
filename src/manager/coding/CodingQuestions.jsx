@@ -9,7 +9,9 @@ import "./CodingQuestions.css";
 
 import AddQuestionModal from "./AddQuestionModal";
 import ViewQuestionModal from "./ViewQuestionModal";
+import GenerateAIQuestionsModal from "./GenerateAIQuestionsModal";
 import GlassSelect from "../components/GlassSelect";
+
 
 function CodingQuestions() {
 
@@ -23,6 +25,7 @@ function CodingQuestions() {
   const [showAdd, setShowAdd] = useState(false);
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showGenerate,setShowGenerate] = useState(false);
 
   const [selectedQuestion, setSelectedQuestion] = useState(null);
 
@@ -127,10 +130,18 @@ function CodingQuestions() {
 
         <button
           className="primary-btn"
+          onClick={() => setShowGenerate(true)}
+        >
+          <FaPlus />
+          Generate Coding Question with AI
+        </button>
+
+        <button
+          className="primary-btn"
           onClick={() => setShowAdd(true)}
         >
           <FaPlus />
-          Add Question
+          Add Question Manually
         </button>
 
       </div>
@@ -271,6 +282,12 @@ function CodingQuestions() {
           refresh={loadQuestions}
 
         />
+
+      )}
+      {showGenerate && (
+        <GenerateAIQuestionsModal
+    close={() => setShowGenerate(false)}
+  />
 
       )}
 

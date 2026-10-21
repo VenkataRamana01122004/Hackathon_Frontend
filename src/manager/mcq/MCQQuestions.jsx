@@ -8,7 +8,9 @@ import "./MCQQuestions.css";
 import AddMCQModal from "./AddMCQModal";
 import ViewMCQModal from "./ViewMCQModal";
 import EditMCQModal from "./EditMCQModal";
+import GenerateAIMCQModal from './GenerateAIMCQModal'
 import GlassSelect from "../components/GlassSelect";
+
 
 function MCQQuestions() {
 
@@ -21,6 +23,7 @@ function MCQQuestions() {
   const [showAdd, setShowAdd] = useState(false);
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showGenerate, setShowGenerate] = useState(false);
 
   const [selectedQuestion, setSelectedQuestion] = useState(null);
 
@@ -118,10 +121,18 @@ function MCQQuestions() {
 
         <button
           className="primary-btn"
+          onClick={() => setShowGenerate(true)}
+        >
+          <FaPlus />
+          Generate MCQ Questions with AI
+        </button>
+
+        <button
+          className="primary-btn"
           onClick={() => setShowAdd(true)}
         >
           <FaPlus />
-          Add MCQ
+          Add MCQ Manually
         </button>
 
       </div>
@@ -257,6 +268,17 @@ function MCQQuestions() {
           close={()=>setShowAdd(false)}
 
           refresh={loadQuestions}
+
+        />
+
+      }
+
+      {showGenerate &&
+
+        <GenerateAIMCQModal
+
+          close={()=>setShowGenerate(false)}
+
 
         />
 

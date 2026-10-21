@@ -62,11 +62,11 @@ function Sidebar({ isOpen }) {
     path: "/manager/qualifiers",
     icon: <FaUserCheck />,
   },
-  {
-    title: "Employee Reviews",
-    path: "/manager/reviews",
-    icon: <FaStar />,
-  },
+  // {
+  //   title: "Employee Reviews",
+  //   path: "/manager/reviews",
+  //   icon: <FaStar />,
+  // },
 ];
 
   return (
