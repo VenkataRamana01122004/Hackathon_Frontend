@@ -28,6 +28,7 @@ function CandidateTable({
             {/* {showScores && <th>Bot Score</th>}
             {showScores && <th>Technical</th>} */}
 
+            <th>Grades</th>
             <th>Status</th>
 
             {/* {showAssignRole && <th>Assigned Role</th>} */}
@@ -55,6 +56,7 @@ function CandidateTable({
                 <td>{candidate.appliedRole}</td>
 
                 <td>{candidate.experience}</td>
+                <td>{candidate.grade}</td>
 {/* 
                 {showScores && (
                   <td>

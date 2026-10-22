@@ -9,6 +9,7 @@ function AddCandidateModal({ isOpen, onClose }) {
     email: "",
     password: "",
     phone: "",
+    grade:"",
     gender: "",
     dob: "",
     qualification: "",
@@ -43,8 +44,8 @@ function AddCandidateModal({ isOpen, onClose }) {
     if (
       !candidate.fullName ||
       !candidate.email ||
-      !candidate.password ||
-      !candidate.phone
+      !candidate.phone||
+      !candidate.grade
     ) {
       alert("Please fill all required fields.");
       return;
@@ -57,6 +58,7 @@ function AddCandidateModal({ isOpen, onClose }) {
       formData.append("email", candidate.email);
       formData.append("password", candidate.password);
       formData.append("phone", candidate.phone);
+      formData.append("grade", candidate.grade);
       formData.append("gender", candidate.gender);
       formData.append("dob", candidate.dob);
       formData.append("qualification", candidate.qualification);
@@ -86,6 +88,7 @@ function AddCandidateModal({ isOpen, onClose }) {
         email: "",
         password: "Candidate@ncr2026",
         phone: "",
+        grade: "",
         gender: "",
         dob: "",
         qualification: "",
@@ -135,7 +138,7 @@ function AddCandidateModal({ isOpen, onClose }) {
               />
             </div>
 
-            <div className="form-group">
+            {/* <div className="form-group">
               <label>Password *</label>
               <input
                 type="password"
@@ -144,7 +147,7 @@ function AddCandidateModal({ isOpen, onClose }) {
                 onChange={handleChange}
                 required
               />
-            </div>
+            </div> */}
 
             <div className="form-group">
               <label>Phone *</label>
@@ -156,6 +159,20 @@ function AddCandidateModal({ isOpen, onClose }) {
                 required
               />
             </div>
+
+            <div className="form-group">
+                <label>Grade *</label>
+                <input
+                  type="number"
+                  name="grade"
+                  value={candidate.grade}
+                  onChange={handleChange}
+                  min={8}
+                  max={14}
+                  step={1}
+                  required
+                />
+              </div>
 
             <div className="form-group">
               <label>Gender</label>
@@ -244,14 +261,14 @@ function AddCandidateModal({ isOpen, onClose }) {
             />
           </div>
 
-          <div className="form-group">
+          {/* <div className="form-group">
             <label>Resume</label>
             <input
               type="file"
               accept=".pdf,.doc,.docx"
               onChange={handleResume}
             />
-          </div>
+          </div> */}
 
           <div className="modal-buttons">
             <button
