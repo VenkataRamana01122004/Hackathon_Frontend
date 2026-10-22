@@ -4,8 +4,8 @@ import GlassSelect from "../components/GlassSelect";
 
 function GenerateAIMCQModal({ close, refresh }) {
   const [form, setForm] = useState({
-    topic: "Java",
-    category: "Arrays",
+    topic: "Arrays",
+    category: "Java",
     count: 2,
     questionType: "SINGLE",
   });
@@ -84,20 +84,20 @@ function GenerateAIMCQModal({ close, refresh }) {
         </div>
 
         <div className="modal-body">
-          <label>Topic</label>
-          <input
-            name="topic"
-            value={form.topic}
-            onChange={handleChange}
-            placeholder="e.g. Java, Python, C++"
-          />
-
           <label>Category</label>
           <input
             name="category"
             value={form.category}
             onChange={handleChange}
             placeholder="e.g. Simple, OOP, Collections"
+          />
+
+          <label>Topic</label>
+          <input
+            name="topic"
+            value={form.topic}
+            onChange={handleChange}
+            placeholder="e.g. Java, Python, C++"
           />
 
           <label>Question Type</label>
