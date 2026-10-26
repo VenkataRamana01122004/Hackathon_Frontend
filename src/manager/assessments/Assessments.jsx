@@ -6,6 +6,7 @@ import "./Assessment.css";
 import CodingAssessmentModal from "./CodingAssessmentModal";
 import MCQAssessmentModal from "./MCQAssessmentModal";
 import CandidateResultModal from "./CandidateResultModal";
+import BackgroundApplicationsModal from "./BackgroundApplicationsModal";
 
 function Assessments() {
 
@@ -93,6 +94,9 @@ const validateCandidates = async (userId) => {
     const [mcqOpen, setMcqOpen] = useState(false);
     const [validatingId, setValidatingId] = useState(null);
 
+    const [backgroundAppsOpen, setBackgroundAppsOpen] = useState(false);
+const [backgroundCandidateId, setBackgroundCandidateId] = useState(null);
+
     return (
 
         <div className="assessment-page">
@@ -114,6 +118,7 @@ const validateCandidates = async (userId) => {
                         <th>Coding</th>
                         <th>MCQ</th>
                         <th>Result/Validate</th>
+                        <th>Background Apps</th>
                         {/* <th>Validate</th> */}
                     </tr>
 
@@ -182,6 +187,28 @@ const validateCandidates = async (userId) => {
                                 </button>
 
                             </td>
+
+                            <td>
+  <button
+    className="view-btn"
+    onClick={() => {
+      setBackgroundCandidateId(candidate.id);
+      setBackgroundAppsOpen(true);
+    }}
+    style={{
+      backgroundColor: "#7c3aed",
+      color: "#fff",
+      border: "none",
+      borderRadius: "6px",
+      padding: "9px 14px",
+      fontWeight: 600,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Background Apps
+  </button>
+</td>
 
                             {/* <td>
 
@@ -369,6 +396,16 @@ const validateCandidates = async (userId) => {
                 />
 
             }
+
+            {backgroundAppsOpen && (
+  <BackgroundApplicationsModal
+    candidateId={backgroundCandidateId}
+    close={() => {
+      setBackgroundAppsOpen(false);
+      setBackgroundCandidateId(null);
+    }}
+  />
+)}
 
         </div>
 
