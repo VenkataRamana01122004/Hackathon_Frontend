@@ -246,16 +246,9 @@ if (assessments.length === 0) {
           <hr />
 
           <h3>System Information</h3>
-
-          <pre>
-
-            {JSON.stringify(
-              assessment.systemInfo,
-              null,
-              2
-            )}
-
-          </pre>
+<pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%", overflowX: "auto" }}>
+  {JSON.stringify(assessment.systemInfo, null, 2)}
+</pre>
 
           <hr />
 

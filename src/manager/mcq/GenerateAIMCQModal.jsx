@@ -8,6 +8,7 @@ function GenerateAIMCQModal({ close, refresh }) {
     category: "Java",
     count: 2,
     questionType: "SINGLE",
+    difficulty: "Easy",
   });
 
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,11 @@ function GenerateAIMCQModal({ close, refresh }) {
       return;
     }
 
+    if (!form.difficulty) {
+      alert("Select difficulty");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -47,6 +53,7 @@ function GenerateAIMCQModal({ close, refresh }) {
           category: form.category.trim(),
           count: form.count,
           questionType: form.questionType,
+          difficulty: form.difficulty,
         }
       );
 
@@ -89,7 +96,8 @@ function GenerateAIMCQModal({ close, refresh }) {
             name="category"
             value={form.category}
             onChange={handleChange}
-            placeholder="e.g. Simple, OOP, Collections"
+            placeholder="Java, C++, Python ..."
+            disabled={loading}
           />
 
           <label>Topic</label>
@@ -97,7 +105,8 @@ function GenerateAIMCQModal({ close, refresh }) {
             name="topic"
             value={form.topic}
             onChange={handleChange}
-            placeholder="e.g. Java, Python, C++"
+            placeholder="e.g. Arrays, Strings, Inheritance"
+            disabled={loading}
           />
 
           <label>Question Type</label>
@@ -105,16 +114,23 @@ function GenerateAIMCQModal({ close, refresh }) {
             name="questionType"
             value={form.questionType}
             onChange={handleChange}
+            disabled={loading}
           >
-            <option value="SINGLE">
-              Single Choice
-            </option>
-            <option value="MULTIPLE">
-              Multiple Choice
-            </option>
-            <option value="BOTH">
-              Both
-            </option>
+            <option value="SINGLE">Single Choice</option>
+            <option value="MULTIPLE">Multiple Choice</option>
+            <option value="BOTH">Both</option>
+          </GlassSelect>
+
+          <label>Difficulty</label>
+          <GlassSelect
+            name="difficulty"
+            value={form.difficulty}
+            onChange={handleChange}
+            disabled={loading}
+          >
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
           </GlassSelect>
 
           <label>Number of Questions</label>
@@ -125,6 +141,7 @@ function GenerateAIMCQModal({ close, refresh }) {
             max="50"
             value={form.count}
             onChange={handleChange}
+            disabled={loading}
           />
         </div>
 

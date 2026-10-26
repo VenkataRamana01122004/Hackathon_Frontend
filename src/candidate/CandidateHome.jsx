@@ -25,7 +25,7 @@ const isExamTimeReached = (examDate, examTime) => {
   const now = new Date();
 
   const startTime = scheduledDateTime.getTime();
-  const endTime = startTime + 100 * 60 * 1000;
+  const endTime = startTime + 48 * 60 * 60 * 1000;
 
   return now >= startTime && now <= endTime;
 };

@@ -40,9 +40,12 @@ function CandidateProfile() {
         <div>
           <h2 className="profile-name">{user.fullName || "Candidate"}</h2>
           <p className="profile-id">
-            Candidate ID: <strong>{user.id || user.candidateId || "N/A"}</strong>
+            Candidate ID: <strong>{user.candidateId || "N/A"}</strong>
           </p>
           {user.email && <p className="profile-id">Email: <strong>{user.email}</strong></p>}
+          {user.phone && <p className="profile-id">Phone: <strong>{user.phone}</strong></p>}
+          {user.grade && <p className="profile-id">Grade: <strong>{user.grade}</strong></p>}
+          {user.qualification && <p className="profile-id">Qualification: <strong>{user.qualification}</strong></p>}
         </div>
       </div>
 
@@ -67,23 +70,6 @@ function CandidateProfile() {
         </div>
       </div>
 
-      <div className="profile-section glass-panel">
-        <h3 className="profile-section-title">Submitted Details</h3>
-        {submission ? (
-          <div className="profile-details">
-            <div className="profile-detail-row"><span>Name</span><strong>{submission.name || "—"}</strong></div>
-            <div className="profile-detail-row"><span>Mobile</span><strong>{submission.mobile || "—"}</strong></div>
-            <div className="profile-detail-row"><span>Experience</span><strong>{submission.experience || "—"}</strong></div>
-            <div className="profile-detail-row"><span>Resume</span><strong>{submission.resumeFileName || "Not uploaded"}</strong></div>
-            <div className="profile-detail-row">
-              <span>Submitted At</span>
-              <strong>{submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : "—"}</strong>
-            </div>
-          </div>
-        ) : (
-          <p className="profile-empty">No intake form has been submitted for this session yet.</p>
-        )}
-      </div>
     </div>
   );
 }

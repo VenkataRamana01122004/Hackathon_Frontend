@@ -169,7 +169,7 @@ if (assessments.length === 0) {
 
     <div>
       <h4>Total Time</h4>
-      <p>{assessment.totalTime}</p>
+      <p>{(assessment.totalTime / 60000).toFixed(2)} minutes</p>
     </div>
 
     <div>
@@ -195,9 +195,10 @@ if (assessments.length === 0) {
   </div>
 
   <hr />
-
   <h3>System Information</h3>
-  <pre>{JSON.stringify(assessment.systemInfo, null, 2)}</pre>
+<pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%", overflowX: "auto" }}>
+  {JSON.stringify(assessment.systemInfo, null, 2)}
+</pre>
 
   <hr />
 
