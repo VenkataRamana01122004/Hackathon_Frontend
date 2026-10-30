@@ -43,7 +43,7 @@ setIsRandomSchedule(false);
       alert(
         error.response?.data?.message ||
           error.message ||
-          "Failed to schedule interview."
+          "Failed to schedule Assignment."
       );
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ setIsRandomSchedule(false);
     <div className="schedule-overlay">
       <div className="schedule-modal">
         <div className="schedule-header">
-          <h2>Schedule Interview</h2>
+          <h2>Schedule Assignment</h2>
           <button onClick={onClose} disabled={loading}>
             <FaTimes />
           </button>
@@ -62,11 +62,11 @@ setIsRandomSchedule(false);
 
         <div className="candidate-box">
           <h3>{candidate.fullName}</h3>
-          <p>
+          {/* <p>
             {candidate.isRandomSchedule
               ? "Random Schedule"
               : "Manual Schedule"}
-          </p>
+          </p> */}
         </div>
 
         <div className="form-grid">
@@ -94,7 +94,7 @@ setIsRandomSchedule(false);
             />
           </div>
           <div className="input-group random-checkbox">
-  <label>
+  {/* <label>
     <input
       type="checkbox"
       checked={isRandomSchedule}
@@ -102,7 +102,32 @@ setIsRandomSchedule(false);
       disabled={loading}
     />
     Schedule Questions
+  </label> */}
+
+  <label>
+    <input
+      type="radio"
+      name="scheduleMode"
+      value="auto"
+      checked={!isRandomSchedule}
+      onChange={() => setIsRandomSchedule(false)}
+      disabled={loading}
+    />
+    Generate Auto Assignment
   </label>
+
+  <label>
+    <input
+      type="radio"
+      name="scheduleMode"
+      value="scheduled"
+      checked={isRandomSchedule}
+      onChange={() => setIsRandomSchedule(true)}
+      disabled={loading}
+    />
+    Generate Manual Assignment
+  </label>
+
 </div>
         </div>
 
@@ -112,7 +137,7 @@ setIsRandomSchedule(false);
             onClick={scheduleInterview}
             disabled={loading}
           >
-            {loading ? "Saving..." : "Schedule Interview"}
+            {loading ? "Saving..." : "Schedule Assignment"}
           </button>
         </div>
       </div>

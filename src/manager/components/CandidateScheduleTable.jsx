@@ -110,12 +110,12 @@ const handleSchedule = (candidate) => {
       title="Assign interview questions"
     >
       <FaCalendarAlt />
-      <span>Schedule Questions</span>
+      <span>Assign Questions</span>
     </button>
   ) : (
     <span className="status random-schedule">
       <span className="random-dot"></span>
-      Random
+      Auto
     </span>
   )}
 </td>

@@ -21,7 +21,7 @@ function CandidateTable({
       <table className="candidate-table">
         <thead>
           <tr>
-            <th>Candidate</th>
+            <th>Name</th>
             <th>Applied Role</th>
             <th>Experience</th>
 
@@ -33,7 +33,7 @@ function CandidateTable({
 
             {/* {showAssignRole && <th>Assigned Role</th>} */}
 
-            <th>Actions</th>
+            <th>View</th>
           </tr>
         </thead>
 

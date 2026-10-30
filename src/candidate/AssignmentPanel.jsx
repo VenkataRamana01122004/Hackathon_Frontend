@@ -7,21 +7,27 @@ import { recordCodingResult } from "./utils/progress.js";
 import useCameraCoverageWarning from "./utils/useCameraCoverageWarning.js";
 import "./candidate.css";
 
-const ASSIGNMENT_DURATION_SECONDS = 300; 
+// const ASSIGNMENT_DURATION_SECONDS = 300; 
+const ASSIGNMENT_DURATION_SECONDS = 5400;
 const MAX_RESUMES = 2;
 
 const formatStarterCode = (value) => {
-  if (!value) return "";
+  if (!value || typeof value !== "string") return "";
 
-  // Parse JSON-escaped strings only when needed.
-  if (typeof value === "string") {
-    return value
-      .replace(/\\r\\n/g, "\n")
-      .replace(/\\n/g, "\n")
-      .replace(/\\t/g, "    ");
-  }
+  return value
+    // Convert HTML line breaks to new lines
+    .replace(/<br\s*\/?>/gi, "\n")
 
-  return "";
+    // Decode escaped new lines and tabs
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "    ")
+
+    // Remove any remaining HTML tags
+    .replace(/<[^>]*>/g, "")
+
+    // Trim extra blank lines
+    .trim();
 };
 
 function AssignmentPanel() {
@@ -66,6 +72,7 @@ function AssignmentPanel() {
   const [securityWarning, setSecurityWarning] = useState("");
   const [cameraViolations, setCameraViolations] = useState(0);
   const [cameraWarningSeconds, setCameraWarningSeconds] = useState(0);
+  const [cameraIssueDetected, setCameraIssueDetected] = useState(false);
 
   const submittedRef = useRef(false);
   const assignmentStartRef = useRef(null);
@@ -102,6 +109,11 @@ function AssignmentPanel() {
   const videoPreviewRef = useRef(null);
   const cameraCovered = useCameraCoverageWarning(videoPreviewRef, started && !submitting);
   const cameraCoveredRef = useRef(false);
+  const cameraIssueDetectedRef = useRef(false);
+
+const frameCanvasRef = useRef(document.createElement("canvas"));
+const lastFrameHashRef = useRef(null);
+const frozenFramesRef = useRef(0);
   const cameraViolationActiveRef = useRef(false);
   const cameraViolationCountRef = useRef(0);
   const cameraWarningTimerRef = useRef(null);
@@ -110,6 +122,10 @@ function AssignmentPanel() {
   useEffect(() => {
     cameraCoveredRef.current = cameraCovered;
   }, [cameraCovered]);
+
+  useEffect(() => {
+  cameraIssueDetectedRef.current = cameraIssueDetected;
+}, [cameraIssueDetected]);
 
   const attachVideoElement = useCallback((element) => {
     videoPreviewRef.current = element;
@@ -282,10 +298,78 @@ useEffect(() => {
     });
   };
 
+  const isVideoFrozen = () => {
+  const video = videoPreviewRef.current;
+
+  if (!video || video.readyState < 2) {
+    return false;
+  }
+
+  const canvas = frameCanvasRef.current;
+  canvas.width = 32;
+  canvas.height = 24;
+
+  const ctx = canvas.getContext("2d", {
+    willReadFrequently: true,
+  });
+
+  if (!ctx) return false;
+
+  try {
+    ctx.drawImage(video, 0, 0, 32, 24);
+
+    const pixels = ctx.getImageData(0, 0, 32, 24).data;
+
+    let hash = 0;
+
+    for (let i = 0; i < pixels.length; i += 20) {
+      hash += pixels[i];
+    }
+
+    if (hash === lastFrameHashRef.current) {
+      frozenFramesRef.current++;
+    } else {
+      frozenFramesRef.current = 0;
+    }
+
+    lastFrameHashRef.current = hash;
+
+    return frozenFramesRef.current >= 1;
+  } catch {
+    return false;
+  }
+};
+
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+     const stream = await navigator.mediaDevices.getUserMedia({
+  video: {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30, max: 30 },
+    facingMode: "user",
+  },
+  audio: true,
+});
       mediaStreamRef.current = stream;
+
+      const videoTrack = stream.getVideoTracks()[0];
+
+videoTrack.addEventListener("mute", () => {
+  setCameraIssueDetected(true);
+});
+
+videoTrack.addEventListener("ended", () => {
+  setCameraIssueDetected(true);
+});
+
+videoTrack.addEventListener("unmute", () => {
+  setCameraIssueDetected(false);
+
+  frozenFramesRef.current = 0;
+  lastFrameHashRef.current = null;
+});
+
       if (videoPreviewRef.current) {
         videoPreviewRef.current.srcObject = stream;
         await videoPreviewRef.current.play().catch(() => {});
@@ -302,6 +386,27 @@ useEffect(() => {
       };
 
       recorder.start(1000); 
+      const freezeMonitor = setInterval(() => {
+  if (submittedRef.current) {
+    clearInterval(freezeMonitor);
+    return;
+  }
+
+  const frozen = isVideoFrozen();
+
+  if (frozen) {
+  if (!cameraIssueDetectedRef.current) {
+    // setSecurityWarning(
+    //   "âš ï¸ Camera issue detected. Please restore camera immediately."
+    // );
+  }
+
+  setCameraIssueDetected(true);
+} else {
+  setCameraIssueDetected(false);
+  setSecurityWarning("");
+}
+}, 100);
     } catch (err) {
       console.error("Camera/Microphone access was denied or unavailable:", err);
       alert("Camera and Microphone permissions are strictly mandatory for this exam.");
@@ -457,7 +562,15 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    if (!started || submitting || !cameraCovered) {
+    const cameraProblem =
+  cameraCovered || cameraIssueDetected;
+
+if (
+  !started ||
+  submitting ||
+  !cameraProblem
+)
+      {
       cameraViolationActiveRef.current = false;
       if (cameraWarningTimerRef.current) {
         clearInterval(cameraWarningTimerRef.current);
@@ -479,7 +592,11 @@ useEffect(() => {
         if (seconds <= 1) {
           clearInterval(cameraWarningTimerRef.current);
           cameraWarningTimerRef.current = null;
-          if (cameraCoveredRef.current && !submittedRef.current) {
+            if (
+  (cameraCoveredRef.current ||
+    cameraIssueDetectedRef.current) &&
+  !submittedRef.current
+){
             submitCode("camera");
           }
           return 0;
@@ -494,7 +611,11 @@ useEffect(() => {
         cameraWarningTimerRef.current = null;
       }
     };
-  }, [cameraCovered, started, submitting]);
+}, [
+  cameraCovered || cameraIssueDetected,
+  started,
+  submitting
+]);
 
   const handleFullscreenChange = () => {
     if (!started || submittedRef.current) return;
@@ -1001,7 +1122,15 @@ const runCode = async () => {
 
   // 3. Main Coding Dashboard Layout
   return (
-    <div className="app-shell" style={{ position: "relative" }}>
+    // <div className="app-shell" style={{ paddingBottom: "120px" }}>
+    <div
+  className="app-shell"
+  style={{
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+  }}
+>
       <div style={{
         position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
         pointerEvents: 'none', zIndex: 9999, opacity: 0.04, fontSize: '28px',
@@ -1068,19 +1197,19 @@ const runCode = async () => {
 
       {!isOnline && (
         <div className="app-banner" style={{ marginTop: 16 }}>
-          ⚠️ Network offline — progress keeps saving locally, avoid refreshing.
+          âš ï¸ Network offline â€” progress keeps saving locally, avoid refreshing.
         </div>
       )}
 
       {securityWarning && (
         <div className="app-banner" style={{ marginTop: 16, background: securityWarning.startsWith("Camera") ? "var(--danger-soft)" : undefined, borderColor: securityWarning.startsWith("Camera") ? "var(--danger)" : undefined, color: securityWarning.startsWith("Camera") ? "#fca5a5" : undefined }} role="alert">
-          ⚠️ {securityWarning}
+          âš ï¸ {securityWarning}
         </div>
       )}
 
       {isBlurred && (
         <div className="app-banner" style={{ marginTop: 16 }} role="alert">
-          ⚠️ Focus lost — click back inside the exam window.
+          âš ï¸ Focus lost â€” click back inside the exam window.
         </div>
       )}
 
@@ -1100,7 +1229,11 @@ const runCode = async () => {
         </div>
       )}
 
-      <main className="app-main coding-main">
+      {/* <main className="app-main coding-main"> */}
+      <main
+  className="app-main coding-main"
+  style={{ flex: 1 }}
+>
         <ProblemPanel
           question={{
             ...currentQuestion,
@@ -1221,8 +1354,8 @@ const runCode = async () => {
                     >
                       <strong>
                         {result.failed === 0
-                          ? "✓ All Tests Passed"
-                          : "✕ Some Tests Failed"}
+                          ? "âœ“ All Tests Passed"
+                          : "âœ• Some Tests Failed"}
                       </strong>
                       <div className="testresult-summary-meta">
                         {result.passed} / {result.total} test cases passed
@@ -1241,7 +1374,7 @@ const runCode = async () => {
                         >
                           <div className="testcase-card-header">
                             <strong className="testcase-title">
-                              {test.passed ? "✓" : "✕"} Test Case {test.testCase}
+                              {test.passed ? "âœ“" : "âœ•"} Test Case {test.testCase}
                             </strong>
                             <span
                               className={`testcase-tag ${
@@ -1282,7 +1415,7 @@ const runCode = async () => {
 
                       {hiddenCount > 0 && (
                         <div className="testresult-hidden-note">
-                          🔒 {hiddenCount} additional test{" "}
+                          ðŸ”’ {hiddenCount} additional test{" "}
                           {hiddenCount === 1 ? "case is" : "cases are"} hidden and
                           used for evaluation.
                         </div>
@@ -1298,26 +1431,65 @@ const runCode = async () => {
         </section>
       </main>
 
-      {cameraCovered && (
-        <div className="app-banner coding-camera-alert" role="alert">
-          ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
-        </div>
-      )}
+{(cameraCovered || cameraIssueDetected) && (
+  <div
+    role="alert"
+    style={{
+  position: "fixed",
+  top: "20px",
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 2147483647,
+}}
+  >
+    âš ï¸ Camera blocked. Restore camera within{" "}
+    <strong>{cameraWarningSeconds}</strong> seconds or the
+    exam will be submitted automatically.
+  </div>
+)}
 
       <DraggableCamWindow
         videoRef={videoPreviewRef}
         onVideoRef={attachVideoElement}
       />
+<div
+  className="security-panel coding-security"
+  style={{
+    margin: "auto 28px 28px 28px",
+  }}
+>
+  <h5>Proctoring Metrics (Active Diagnostics)</h5>
 
-      <div className="security-panel coding-security" style={{ margin: "20px 28px 28px" }}>
-        <h5>Proctoring Metrics (Active Diagnostics)</h5>
-        <div className="coding-security-grid">
-          <div className={`security-row ${metrics.tabSwitches > 0 ? "security-row--alert" : ""}`}><span>Tab switches</span><strong>{metrics.tabSwitches} / 3</strong></div>
-          <div className={`security-row ${metrics.blurEvents > 0 ? "security-row--alert" : ""}`}><span>Blur events</span><strong>{metrics.blurEvents}</strong></div>
-          <div className={`security-row ${metrics.fullscreenExits > 0 ? "security-row--alert" : ""}`}><span>Fullscreen exits</span><strong>{metrics.fullscreenExits} / 3</strong></div>
-          <div className={`security-row ${cameraCovered ? "security-row--alert" : ""}`}><span>Camera status</span><strong>{cameraCovered ? "Covered" : "Clear"}</strong></div>
-        </div>
-      </div>
+  <div className="coding-security-grid">
+    <div className={`security-row ${metrics.tabSwitches > 0 ? "security-row--alert" : ""}`}>
+      <span>Tab switches</span>
+      <strong>{metrics.tabSwitches} / 3</strong>
+    </div>
+
+    <div className={`security-row ${metrics.blurEvents > 0 ? "security-row--alert" : ""}`}>
+      <span>Blur events</span>
+      <strong>{metrics.blurEvents}</strong>
+    </div>
+
+    <div className={`security-row ${metrics.fullscreenExits > 0 ? "security-row--alert" : ""}`}>
+      <span>Fullscreen exits</span>
+      <strong>{metrics.fullscreenExits} / 3</strong>
+    </div>
+
+    <div className={`security-row ${
+  (cameraCovered || cameraIssueDetected)
+    ? "security-row--alert"
+    : ""
+}`}>
+      <span>Camera status</span>
+      <strong>
+  {(cameraCovered || cameraIssueDetected)
+    ? "Covered / Blocked"
+    : "Clear"}
+</strong>
+    </div>
+  </div>
+</div>
     </div>
   );
 }

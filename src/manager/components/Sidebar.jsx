@@ -33,20 +33,20 @@ function Sidebar({ isOpen }) {
     icon: <FaUsers />,
   },
   {
-    title: "Coding Questions",
-    path: "/manager/coding",
-    icon: <FaCode />,
-  },
-  {
     title: "MCQ Questions",
     path: "/manager/mcq",
     icon: <FaListAlt />,
   },
   {
-    title: "Interview Questions",
-    path: "/manager/interviewquestions",
-    icon: <FaClipboardList />,
+    title: "Coding Questions",
+    path: "/manager/coding",
+    icon: <FaCode />,
   },
+  // {
+  //   title: "Interview Questions",
+  //   path: "/manager/interviewquestions",
+  //   icon: <FaClipboardList />,
+  // },
     {
     title: "Exam Schedule",
     path: "/manager/examschedule",

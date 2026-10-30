@@ -117,8 +117,8 @@ const [backgroundCandidateId, setBackgroundCandidateId] = useState(null);
                         <th>Status</th>
                         <th>Coding</th>
                         <th>MCQ</th>
-                        <th>Result/Validate</th>
                         <th>Background Apps</th>
+                        <th>Result/Validate</th>
                         {/* <th>Validate</th> */}
                     </tr>
 

@@ -13,7 +13,7 @@ import "./candidate.css";
 // --- CONFIGURATION ---
 const BACKEND_URL = 'http://localhost:5000/api/interview/submitbitsassessment';
 const SECURITY_URL = "http://localhost:5000/api/candidate/background-process";
-const EXAM_DURATION = 300;
+const EXAM_DURATION = 1800;
 const MAX_RESUMES = 1;  
 
 const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
@@ -54,6 +54,7 @@ export default function BitsAssessment() {
   const [securityWarning, setSecurityWarning] = useState("");
   const [cameraViolations, setCameraViolations] = useState(0);
   const [cameraWarningSeconds, setCameraWarningSeconds] = useState(0);
+  const [cameraIssueDetected, setCameraIssueDetected] = useState(false);
   const [resumeCount, setResumeCount] = useState(() => parseInt(localStorage.getItem("resume_count") || "0", 10));
 
 
@@ -86,6 +87,11 @@ export default function BitsAssessment() {
   const cameraWarningTimerRef = useRef(null);
   const lastTabSwitchAtRef = useRef(0);
 
+  const frameCanvasRef = useRef(document.createElement("canvas"));
+const lastFrameHashRef = useRef(null);
+const frozenFramesRef = useRef(0);
+const cameraIssueDetectedRef = useRef(false);
+
   const attachVideoElement = useCallback((element) => {
     videoRef.current = element;
     if (element && streamRef.current) {
@@ -97,6 +103,10 @@ export default function BitsAssessment() {
   useEffect(() => {
     cameraCoveredRef.current = cameraCovered;
   }, [cameraCovered]);
+
+  useEffect(() => {
+  cameraIssueDetectedRef.current = cameraIssueDetected;
+}, [cameraIssueDetected]);
 
   // Sync state values instantly to their respective refs
   useEffect(() => { examStartedRef.current = examStarted; }, [examStarted]);
@@ -112,7 +122,7 @@ export default function BitsAssessment() {
   useEffect(() => { isOfflineRef.current = isOffline; }, [isOffline]);
 
   // The question currently on screen counts as "visited" the moment it's
-  // shown — not just when the candidate clicks Next or jumps via the grid.
+  // shown â€” not just when the candidate clicks Next or jumps via the grid.
   // This also makes question 1 start out visited instead of unvisited.
   useEffect(() => {
     const currentQ = questions[currentIndex];
@@ -376,40 +386,139 @@ useEffect(() => {
       console.error("Payload synchronization exception caught:", err);
     }
   };
-   
-  const initProctoring = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, frameRate: 15 }, 
-        audio: true,
-      });
+   const isVideoFrozen = () => {
+  const video = videoRef.current;
 
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
+  if (!video || video.readyState < 2) {
+    return false;
+  }
+
+  const canvas = frameCanvasRef.current;
+  canvas.width = 32;
+  canvas.height = 24;
+
+  const ctx = canvas.getContext("2d", {
+    willReadFrequently: true,
+  });
+
+  if (!ctx) return false;
+
+  try {
+    ctx.drawImage(video, 0, 0, 32, 24);
+
+    const pixels = ctx.getImageData(0, 0, 32, 24).data;
+
+    let hash = 0;
+
+    for (let i = 0; i < pixels.length; i += 20) {
+      hash += pixels[i];
+    }
+
+    if (hash === lastFrameHashRef.current) {
+      frozenFramesRef.current += 1;
+    } else {
+      frozenFramesRef.current = 0;
+    }
+
+    lastFrameHashRef.current = hash;
+
+    return frozenFramesRef.current >= 3;
+  } catch {
+    return false;
+  }
+};
+
+  const initProctoring = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30, max: 30 },
+        facingMode: "user",
+      },
+      audio: true,
+    });
+
+    streamRef.current = stream;
+
+    const videoTrack = stream.getVideoTracks()[0];
+
+    videoTrack.addEventListener("ended", () => {
+      logEvent("SECURITY ALERT: Camera disconnected.");
+
+      setCameraIssueDetected(true);
+    });
+
+    videoTrack.addEventListener("mute", () => {
+      logEvent("SECURITY ALERT: Camera feed muted.");
+
+      setCameraIssueDetected(true);
+    });
+
+    videoTrack.addEventListener("unmute", () => {
+  setCameraIssueDetected(false);
+
+  frozenFramesRef.current = 0;
+lastFrameHashRef.current = null;
+
+  logEvent("Camera feed restored.");
+});
+
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+
+      await videoRef.current.play().catch(() => {});
+    }
+
+    const options = MediaRecorder.isTypeSupported(
+      "video/webm;codecs=vp9"
+    )
+      ? { mimeType: "video/webm;codecs=vp9" }
+      : { mimeType: "video/webm" };
+
+    const recorder = new MediaRecorder(stream, options);
+
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        mediaRecorderRef.current.finalBlob = event.data;
+      }
+    };
+
+    recorder.start();
+
+    const freezeMonitor = setInterval(() => {
+      if (
+        examFinishedRef.current ||
+        submittingRef.current
+      ) {
+        clearInterval(freezeMonitor);
+        return;
       }
 
-      const options = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-        ? { mimeType: "video/webm;codecs=vp9" }
-        : { mimeType: "video/webm" };
+const frozen = isVideoFrozen();
 
-      const recorder = new MediaRecorder(stream, options);
-      mediaRecorderRef.current = recorder;
+if (frozen) {
+  setCameraIssueDetected(true);
+} else {
+  setCameraIssueDetected(false);
+}
+    }, 100);
 
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          mediaRecorderRef.current.finalBlob = event.data;
-        }
-      };
+    logEvent(
+      "Camera/Mic hardware stream successfully linked."
+    );
+  } catch (err) {
+    console.error("Hardware access exceptions:", err);
 
-      recorder.start();
-      logEvent("Camera/Mic hardware stream successfully linked.");
-    } catch (err) {
-      console.error("Hardware access exceptions:", err);
-      alert("Hardware access is mandatory to take this exam.");
-    }
-  };
+    alert(
+      "Hardware access is mandatory to take this exam."
+    );
+  }
+};
 
   // --- EXTRA SHIELD OVERLAY ACCESSIBLE HANDLERS ---
 const handleFullscreenChange = () => {
@@ -905,7 +1014,15 @@ logEvent("Brand new operational exam profile generated.");
   };
 
   useEffect(() => {
-    if (!examStarted || examFinished || !cameraCovered) {
+    
+    const cameraProblem =
+  cameraCovered || cameraIssueDetected;
+
+if (
+  !examStarted ||
+  examFinished ||
+  !cameraProblem
+) {
       cameraViolationActiveRef.current = false;
       if (cameraWarningTimerRef.current) {
         clearInterval(cameraWarningTimerRef.current);
@@ -921,13 +1038,21 @@ logEvent("Brand new operational exam profile generated.");
     cameraViolationCountRef.current += 1;
     const violationNumber = cameraViolationCountRef.current;
     setCameraViolations(violationNumber);
+    if (violationNumber >= 3 && !submittingRef.current) {
+  autoSubmitExam("Maximum camera violations exceeded.");
+  return;
+}
     setCameraWarningSeconds(10);
     cameraWarningTimerRef.current = setInterval(() => {
       setCameraWarningSeconds((seconds) => {
         if (seconds <= 1) {
           clearInterval(cameraWarningTimerRef.current);
           cameraWarningTimerRef.current = null;
-          if (cameraCoveredRef.current && !submittingRef.current) {
+          if (
+  (cameraCoveredRef.current ||
+    cameraIssueDetectedRef.current) &&
+  !submittingRef.current
+){
             autoSubmitExam("Camera remained covered for 10 seconds.");
           }
           return 0;
@@ -942,15 +1067,19 @@ logEvent("Brand new operational exam profile generated.");
         cameraWarningTimerRef.current = null;
       }
     };
-  }, [cameraCovered, examStarted, examFinished]);
+  }, [
+  cameraCovered || cameraIssueDetected,
+  examStarted,
+  examFinished
+]);
 
   if (examFinished) {
-    // No results screen — submission finishes and autoSubmitExam() takes
+    // No results screen â€” submission finishes and autoSubmitExam() takes
     // the candidate straight back to the candidate home page. This is a
     // brief placeholder for the moment in between.
     return (
       <div className="glass-panel glass-panel--elevated" style={{ padding: '60px 40px', textAlign: 'center', maxWidth: '500px', margin: '40px auto', color: 'var(--text-primary)' }}>
-        <h2 style={{ marginBottom: '10px' }}>Submitting your assessment…</h2>
+        <h2 style={{ marginBottom: '10px' }}>Submitting your assessmentâ€¦</h2>
         <p style={{ color: 'var(--text-secondary)' }}>Please wait, you'll be redirected shortly.</p>
       </div>
     );
@@ -975,7 +1104,7 @@ if (!examStarted) {
         ) : submittedData ? (
           <>
             <div style={{ background: "var(--success-soft)", color: "#4ade80", padding: 15, borderRadius: 5, marginBottom: 20 }}>
-              ✅ Previous assessment layout data has already been fully processed and locked.
+              âœ… Previous assessment layout data has already been fully processed and locked.
             </div>
             <button onClick={startNewExam} className="btn btn--primary" style={{ padding: "12px 25px", fontSize: 16 }}>
               Start New Exam
@@ -1022,9 +1151,9 @@ if (!examStarted) {
         flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center',
         fontSize: '28px', fontWeight: 'bold', color: '#000', userSelect: 'none'
       }}>
-        <div>{CANDIDATE_NAME} • {CANDIDATE_USERNAME}</div>
-        <div>SECURE EXAM CONTEXT • {CANDIDATE_NAME}</div>
-        <div>{CANDIDATE_USERNAME} • WORKFLOW RUNNING</div>
+        <div>{CANDIDATE_NAME} â€¢ {CANDIDATE_USERNAME}</div>
+        <div>SECURE EXAM CONTEXT â€¢ {CANDIDATE_NAME}</div>
+        <div>{CANDIDATE_USERNAME} â€¢ WORKFLOW RUNNING</div>
       </div>
 
       <header className="app-header">
@@ -1083,19 +1212,29 @@ if (!examStarted) {
 
       {isBlurred && (
         <div className="app-banner" style={{ marginTop: 16 }}>
-          ⚠️ Focus lost — click back inside the exam window. Repeated escapes will auto-submit.
+          âš ï¸ Focus lost â€” click back inside the exam window. Repeated escapes will auto-submit.
         </div>
       )}
 
       {securityWarning && (
         <div className="app-banner" style={{ marginTop: 16 }}>
-          ⚠️ {securityWarning}
+          âš ï¸ {securityWarning}
         </div>
       )}
 
-      {cameraCovered && (
-        <div className="app-banner" style={{ marginTop: 16, background: "var(--danger-soft)", borderColor: "var(--danger)", color: "#fca5a5" }} role="alert">
-          ⚠️ Camera covered ({cameraViolations}/3). Uncover within {cameraWarningSeconds} seconds or the exam will be submitted.
+      {(cameraCovered || cameraIssueDetected) && (
+        <div
+          className="app-banner"
+          style={{
+            marginTop: 16,
+            background: "var(--danger-soft)",
+            borderColor: "var(--danger)",
+            color: "#fca5a5"
+          }}
+          role="alert"
+        >
+          âš ï¸ Camera violation ({cameraViolations}/3). Restore camera within{" "}
+          {cameraWarningSeconds} seconds or the exam will be submitted.
         </div>
       )}
 
@@ -1141,4 +1280,4 @@ if (!examStarted) {
       </main>
     </div>
   );
-} 
+}
