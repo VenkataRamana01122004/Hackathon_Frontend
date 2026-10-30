@@ -38,6 +38,8 @@ export default function BitsAssessment() {
   const [loading, setLoading] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const [examFinished, setExamFinished] = useState(false);
+  // The countdown is held until camera, microphone, video playback and recording are ready.
+  const [cameraReady, setCameraReady] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -137,14 +139,6 @@ const cameraIssueDetectedRef = useRef(false);
     });
   }, [currentIndex, questions, statuses]);
 
-  // --- ROUTE PROTECTION ---
-  // useEffect(() => {
-  //   if (!hasSubmittedProfile()) {
-  //     navigate("/candidate/submission", { state: { next: "/candidate/bitsassessment" } });
-  //   }
-  // }, [navigate]);
-
-  // --- INITIAL REFRESH & PERSISTENCE RESTORATION ---
 useEffect(() => {
   const isRunning = localStorage.getItem("exam_running") === "true";
   const savedQuestions = localStorage.getItem("exam_questions");
@@ -254,20 +248,26 @@ window.addEventListener("keydown", restoreFullscreen);
   }, [examStarted, examFinished]);
 
   // --- PROCTORING CAMERA STREAM ATTACHMENT ---
+  // The exam UI renders first so CamWindow mounts. Then camera initialization
+  // runs; the countdown remains paused until initProctoring sets cameraReady.
   useEffect(() => {
     if (examStarted && !examFinished) {
+      setCameraReady(false);
       initProctoring();
     }
+
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
     };
   }, [examStarted, examFinished]);
 
   // --- COUNTDOWN TIMER ---
+  // Do not consume exam time until the camera and recorder are confirmed ready.
   useEffect(() => {
-    if (!examStarted || examFinished) return;
+    if (!examStarted || !cameraReady || examFinished) return;
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
@@ -281,10 +281,10 @@ window.addEventListener("keydown", restoreFullscreen);
         if (nextTime === 300) alert("Warning: Only 5 minutes remaining!");
         return nextTime;
       });
-    }, 1000);
+    }, 500);
 
     return () => clearInterval(interval);
-  }, [examStarted, examFinished]);
+  }, [examStarted, cameraReady, examFinished]);
 
   // --- BACKGROUND AUTO-SAVE (Runs every 30 seconds) ---
   useEffect(() => {
@@ -429,96 +429,191 @@ useEffect(() => {
 };
 
   const initProctoring = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 30, max: 30 },
-        facingMode: "user",
-      },
-      audio: true,
-    });
+    let stream = null;
 
-    streamRef.current = stream;
+    // Always hold the timer until every proctoring startup step succeeds.
+    setCameraReady(false);
 
-    const videoTrack = stream.getVideoTracks()[0];
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera and microphone access is not supported in this environment.");
+      }
 
-    videoTrack.addEventListener("ended", () => {
-      logEvent("SECURITY ALERT: Camera disconnected.");
+      // 1. Acquire both camera and microphone.
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, max: 30 },
+          facingMode: "user",
+        },
+        audio: true,
+      });
 
-      setCameraIssueDetected(true);
-    });
+      streamRef.current = stream;
 
-    videoTrack.addEventListener("mute", () => {
-      logEvent("SECURITY ALERT: Camera feed muted.");
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
 
-      setCameraIssueDetected(true);
-    });
+      if (!videoTrack || videoTrack.readyState !== "live") {
+        throw new Error("The camera could not be initialized.");
+      }
 
-    videoTrack.addEventListener("unmute", () => {
-  setCameraIssueDetected(false);
+      if (!audioTrack || audioTrack.readyState !== "live") {
+        throw new Error("The microphone could not be initialized.");
+      }
 
-  frozenFramesRef.current = 0;
-lastFrameHashRef.current = null;
+      videoTrack.addEventListener("ended", () => {
+        logEvent("SECURITY ALERT: Camera disconnected.");
+        setCameraIssueDetected(true);
+      });
 
-  logEvent("Camera feed restored.");
-});
+      videoTrack.addEventListener("mute", () => {
+        logEvent("SECURITY ALERT: Camera feed muted.");
+        setCameraIssueDetected(true);
+      });
 
+      videoTrack.addEventListener("unmute", () => {
+        setCameraIssueDetected(false);
+        frozenFramesRef.current = 0;
+        lastFrameHashRef.current = null;
+        logEvent("Camera feed restored.");
+      });
 
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
+      audioTrack.addEventListener("ended", () => {
+        logEvent("SECURITY ALERT: Microphone disconnected.");
+        setCameraIssueDetected(true);
+      });
 
-      await videoRef.current.play().catch(() => {});
+      // 2. Attach the stream to the already-mounted CamWindow and confirm playback.
+      const video = videoRef.current;
+      if (!video) {
+        throw new Error("The camera preview element is not available.");
+      }
+
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+
+      if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+        await new Promise((resolve, reject) => {
+          const onLoadedMetadata = () => {
+            cleanup();
+            resolve();
+          };
+          const onError = () => {
+            cleanup();
+            reject(new Error("The camera video metadata could not be loaded."));
+          };
+          const cleanup = () => {
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
+            video.removeEventListener("error", onError);
+          };
+          video.addEventListener("loadedmetadata", onLoadedMetadata, { once: true });
+          video.addEventListener("error", onError, { once: true });
+        });
+      }
+
+      await video.play();
+
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth <= 0) {
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error("The camera did not provide a playable video frame."));
+          }, 10000);
+
+          const onPlaying = () => {
+            cleanup();
+            resolve();
+          };
+          const cleanup = () => {
+            clearTimeout(timeout);
+            video.removeEventListener("playing", onPlaying);
+          };
+          video.addEventListener("playing", onPlaying, { once: true });
+        });
+      }
+
+      if (video.paused || video.videoWidth <= 0) {
+        throw new Error("Camera video playback could not be confirmed.");
+      }
+
+      // 3. Start MediaRecorder only after video playback is confirmed.
+      if (typeof MediaRecorder === "undefined") {
+        throw new Error("MediaRecorder is not supported in this environment.");
+      }
+
+      const options = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+        ? { mimeType: "video/webm;codecs=vp9" }
+        : { mimeType: "video/webm" };
+
+      const recorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0 && mediaRecorderRef.current === recorder) {
+          mediaRecorderRef.current.finalBlob = event.data;
+        }
+      };
+
+      recorder.onerror = (event) => {
+        console.error("MediaRecorder error:", event.error);
+        logEvent("SECURITY ALERT: Camera recording error.");
+        setCameraIssueDetected(true);
+      };
+
+      recorder.start();
+
+      if (recorder.state !== "recording") {
+        throw new Error("The camera recording did not start successfully.");
+      }
+
+      // 4. Mark ready only after the stream, playback and recorder are all working.
+      setCameraReady(true);
+      logEvent("Camera and microphone initialized. Video playback confirmed and MediaRecorder started.");
+
+      const freezeMonitor = setInterval(() => {
+        if (examFinishedRef.current || submittingRef.current) {
+          clearInterval(freezeMonitor);
+          return;
+        }
+
+        setCameraIssueDetected(isVideoFrozen());
+      }, 100);
+
+    } catch (err) {
+      console.error("Hardware access exceptions:", err);
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (stopError) {
+          console.warn("Unable to stop partially initialized recorder:", stopError);
+        }
+      }
+
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+
+      streamRef.current = null;
+      mediaRecorderRef.current = null;
+      setCameraReady(false);
+      setExamStarted(false);
+      localStorage.removeItem("exam_running");
+
+      try {
+        await window.electronAPI?.stopExam?.();
+      } catch (stopError) {
+        console.warn("Unable to stop Electron exam mode:", stopError);
+      }
+
+      alert(
+        `Unable to start the exam because camera/microphone initialization failed.\n\n${err.message || "Unknown hardware error"}\n\nPlease enable camera and microphone access, then try again.`
+      );
     }
-
-    const options = MediaRecorder.isTypeSupported(
-      "video/webm;codecs=vp9"
-    )
-      ? { mimeType: "video/webm;codecs=vp9" }
-      : { mimeType: "video/webm" };
-
-    const recorder = new MediaRecorder(stream, options);
-
-    mediaRecorderRef.current = recorder;
-
-    recorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) {
-        mediaRecorderRef.current.finalBlob = event.data;
-      }
-    };
-
-    recorder.start();
-
-    const freezeMonitor = setInterval(() => {
-      if (
-        examFinishedRef.current ||
-        submittingRef.current
-      ) {
-        clearInterval(freezeMonitor);
-        return;
-      }
-
-const frozen = isVideoFrozen();
-
-if (frozen) {
-  setCameraIssueDetected(true);
-} else {
-  setCameraIssueDetected(false);
-}
-    }, 100);
-
-    logEvent(
-      "Camera/Mic hardware stream successfully linked."
-    );
-  } catch (err) {
-    console.error("Hardware access exceptions:", err);
-
-    alert(
-      "Hardware access is mandatory to take this exam."
-    );
-  }
-};
+  };
 
   // --- EXTRA SHIELD OVERLAY ACCESSIBLE HANDLERS ---
 const handleFullscreenChange = () => {
@@ -840,6 +935,7 @@ if (examStartResult && !examStartResult.success) {
   throw new Error(examStartResult.message || "Unable to start the exam.");
 }
 
+setCameraReady(false);
 setExamStarted(true);
 
 // Wait for React to render the exam screen, then ensure fullscreen
@@ -897,6 +993,7 @@ logEvent("Brand new operational exam profile generated.");
     if (examStartResult && !examStartResult.success) {
       throw new Error(examStartResult.message || "Unable to resume the exam.");
     }
+    setCameraReady(false);
     setExamStarted(true);
     logEvent(`Exam session resumed. Attempt count: ${count}`);
   };
@@ -971,6 +1068,7 @@ logEvent("Brand new operational exam profile generated.");
     if (submittingRef.current) return;
 
     submittingRef.current = true;
+    setCameraReady(false);
     setExamFinished(true);
     await window.electronAPI?.stopExam?.();
 
@@ -1144,6 +1242,45 @@ if (!examStarted) {
 
   return (
     <div className="app-shell" style={{ position: "relative" }}>
+      {!cameraReady && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            gap: 12,
+            padding: 24,
+            background: "rgba(8, 12, 24, 0.94)",
+            color: "#fff",
+            textAlign: "center",
+            pointerEvents: "all",
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              width: 42,
+              height: 42,
+              border: "4px solid rgba(255,255,255,0.25)",
+              borderTopColor: "#60a5fa",
+              borderRadius: "50%",
+              animation: "bitsCameraSpin 0.9s linear infinite",
+            }}
+          />
+          <h2 style={{ margin: 0 }}>Preparing secure exam environment</h2>
+          <p style={{ margin: 0, maxWidth: 440, color: "#cbd5e1" }}>
+            Please allow camera and microphone access. The exam countdown will begin only after video playback and recording are confirmed.
+          </p>
+          <style>{`@keyframes bitsCameraSpin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
       {/* watermark overlay */}
       <div style={{
         position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -1212,13 +1349,13 @@ if (!examStarted) {
 
       {isBlurred && (
         <div className="app-banner" style={{ marginTop: 16 }}>
-          âš ï¸ Focus lost â€” click back inside the exam window. Repeated escapes will auto-submit.
+          ⚠️ Focus lost click back inside the exam window. Repeated escapes will auto-submit.
         </div>
       )}
 
       {securityWarning && (
         <div className="app-banner" style={{ marginTop: 16 }}>
-          âš ï¸ {securityWarning}
+          ⚠️ {securityWarning}
         </div>
       )}
 
@@ -1233,7 +1370,7 @@ if (!examStarted) {
           }}
           role="alert"
         >
-          âš ï¸ Camera violation ({cameraViolations}/3). Restore camera within{" "}
+          ⚠️ Camera violation ({cameraViolations}/3). Restore camera within{" "}
           {cameraWarningSeconds} seconds or the exam will be submitted.
         </div>
       )}
