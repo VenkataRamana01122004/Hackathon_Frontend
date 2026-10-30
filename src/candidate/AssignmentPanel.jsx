@@ -334,7 +334,7 @@ useEffect(() => {
 
     lastFrameHashRef.current = hash;
 
-    return frozenFramesRef.current >= 1;
+    return frozenFramesRef.current >= 5;
   } catch {
     return false;
   }
@@ -353,7 +353,8 @@ useEffect(() => {
 });
       mediaStreamRef.current = stream;
 
-      const videoTrack = stream.getVideoTracks()[0];
+     
+const videoTrack = stream.getVideoTracks()[0];
 
 videoTrack.addEventListener("mute", () => {
   setCameraIssueDetected(true);
@@ -364,49 +365,58 @@ videoTrack.addEventListener("ended", () => {
 });
 
 videoTrack.addEventListener("unmute", () => {
-  setCameraIssueDetected(false);
-
   frozenFramesRef.current = 0;
   lastFrameHashRef.current = null;
+
+  // Let the freeze monitor confirm that the camera is working
+  // before clearing the camera issue.
 });
 
-      if (videoPreviewRef.current) {
-        videoPreviewRef.current.srcObject = stream;
-        await videoPreviewRef.current.play().catch(() => {});
-      }
+if (videoPreviewRef.current) {
+  videoPreviewRef.current.srcObject = stream;
 
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-      mediaRecorderRef.current = recorder;
-      recordedChunksRef.current = [];
+  try {
+    await videoPreviewRef.current.play();
+  } catch (error) {
+    console.warn("Camera preview could not start:", error);
+  }
+}
 
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          recordedChunksRef.current.push(e.data);
-        }
-      };
+const recorder = new MediaRecorder(stream, {
+  mimeType: "video/webm",
+});
 
-      recorder.start(1000); 
-      const freezeMonitor = setInterval(() => {
+mediaRecorderRef.current = recorder;
+recordedChunksRef.current = [];
+
+recorder.ondataavailable = (event) => {
+  if (event.data && event.data.size > 0) {
+    recordedChunksRef.current.push(event.data);
+  }
+};
+
+recorder.start(1000);
+
+const freezeMonitor = setInterval(() => {
   if (submittedRef.current) {
     clearInterval(freezeMonitor);
     return;
   }
 
-  const frozen = isVideoFrozen();
+  const currentTrack = mediaStreamRef.current?.getVideoTracks()[0];
 
-  if (frozen) {
-  if (!cameraIssueDetectedRef.current) {
-    // setSecurityWarning(
-    //   "âš ï¸ Camera issue detected. Please restore camera immediately."
-    // );
+  const trackUnavailable =
+    !currentTrack ||
+    currentTrack.readyState !== "live" ||
+    currentTrack.muted;
+
+  if (trackUnavailable || isVideoFrozen()) {
+    setCameraIssueDetected(true);
+  } else {
+    setCameraIssueDetected(false);
   }
-
-  setCameraIssueDetected(true);
-} else {
-  setCameraIssueDetected(false);
-  setSecurityWarning("");
-}
 }, 100);
+
     } catch (err) {
       console.error("Camera/Microphone access was denied or unavailable:", err);
       alert("Camera and Microphone permissions are strictly mandatory for this exam.");
@@ -561,61 +571,58 @@ videoTrack.addEventListener("unmute", () => {
     }
   };
 
-  useEffect(() => {
-    const cameraProblem =
-  cameraCovered || cameraIssueDetected;
+  
+useEffect(() => {
+  const cameraProblem = cameraCovered || cameraIssueDetected;
 
-if (
-  !started ||
-  submitting ||
-  !cameraProblem
-)
-      {
-      cameraViolationActiveRef.current = false;
-      if (cameraWarningTimerRef.current) {
-        clearInterval(cameraWarningTimerRef.current);
-        cameraWarningTimerRef.current = null;
-      }
-      setCameraWarningSeconds(0);
-      return undefined;
+  if (!started || submitting || !cameraProblem || submittedRef.current) {
+    if (cameraWarningTimerRef.current) {
+      clearInterval(cameraWarningTimerRef.current);
+      cameraWarningTimerRef.current = null;
     }
 
-    if (cameraViolationActiveRef.current || submittedRef.current) return undefined;
+    cameraViolationActiveRef.current = false;
+    setCameraWarningSeconds(0);
+    return;
+  }
 
-    cameraViolationActiveRef.current = true;
-    cameraViolationCountRef.current += 1;
-    const violationNumber = cameraViolationCountRef.current;
-    setCameraViolations(violationNumber);
-    setCameraWarningSeconds(10);
-    cameraWarningTimerRef.current = setInterval(() => {
-      setCameraWarningSeconds((seconds) => {
-        if (seconds <= 1) {
-          clearInterval(cameraWarningTimerRef.current);
-          cameraWarningTimerRef.current = null;
-            if (
-  (cameraCoveredRef.current ||
-    cameraIssueDetectedRef.current) &&
-  !submittedRef.current
-){
-            submitCode("camera");
-          }
-          return 0;
-        }
-        return seconds - 1;
-      });
-    }, 1000);
+  if (cameraViolationActiveRef.current) return;
 
-    return () => {
-      if (cameraWarningTimerRef.current) {
-        clearInterval(cameraWarningTimerRef.current);
-        cameraWarningTimerRef.current = null;
+  cameraViolationActiveRef.current = true;
+  cameraViolationCountRef.current += 1;
+
+  setCameraViolations(cameraViolationCountRef.current);
+
+  let remainingSeconds = 10;
+  setCameraWarningSeconds(remainingSeconds);
+
+  cameraWarningTimerRef.current = setInterval(() => {
+    remainingSeconds -= 1;
+    setCameraWarningSeconds(remainingSeconds);
+
+    if (remainingSeconds <= 0) {
+      clearInterval(cameraWarningTimerRef.current);
+      cameraWarningTimerRef.current = null;
+
+      if (
+        (cameraCoveredRef.current || cameraIssueDetectedRef.current) &&
+        !submittedRef.current
+      ) {
+        submitCode("camera");
       }
-    };
-}, [
-  cameraCovered || cameraIssueDetected,
-  started,
-  submitting
-]);
+    }
+  }, 1000);
+}, [cameraCovered, cameraIssueDetected, started, submitting]);
+
+useEffect(() => {
+  return () => {
+    if (cameraWarningTimerRef.current) {
+      clearInterval(cameraWarningTimerRef.current);
+      cameraWarningTimerRef.current = null;
+    }
+  };
+}, []);
+
 
   const handleFullscreenChange = () => {
     if (!started || submittedRef.current) return;
@@ -1197,19 +1204,19 @@ const runCode = async () => {
 
       {!isOnline && (
         <div className="app-banner" style={{ marginTop: 16 }}>
-          âš ï¸ Network offline â€” progress keeps saving locally, avoid refreshing.
+          ⚠️ Network offline progress keeps saving locally, avoid refreshing.
         </div>
       )}
 
       {securityWarning && (
         <div className="app-banner" style={{ marginTop: 16, background: securityWarning.startsWith("Camera") ? "var(--danger-soft)" : undefined, borderColor: securityWarning.startsWith("Camera") ? "var(--danger)" : undefined, color: securityWarning.startsWith("Camera") ? "#fca5a5" : undefined }} role="alert">
-          âš ï¸ {securityWarning}
+          ⚠️ {securityWarning}
         </div>
       )}
 
       {isBlurred && (
         <div className="app-banner" style={{ marginTop: 16 }} role="alert">
-          âš ï¸ Focus lost â€” click back inside the exam window.
+          ⚠️ Focus lost click back inside the exam window.
         </div>
       )}
 
@@ -1442,7 +1449,7 @@ const runCode = async () => {
   zIndex: 2147483647,
 }}
   >
-    âš ï¸ Camera blocked. Restore camera within{" "}
+    ⚠️ Camera blocked. Restore camera within{" "}
     <strong>{cameraWarningSeconds}</strong> seconds or the
     exam will be submitted automatically.
   </div>
@@ -1455,7 +1462,11 @@ const runCode = async () => {
 <div
   className="security-panel coding-security"
   style={{
-    margin: "auto 28px 28px 28px",
+    position: "relative",
+    width: "calc(100% - 56px)",
+    margin: "24px 28px 28px",
+    boxSizing: "border-box",
+    clear: "both",
   }}
 >
   <h5>Proctoring Metrics (Active Diagnostics)</h5>
